@@ -1,0 +1,15 @@
+﻿C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(392,5): warning MSB8028: The intermediate directory (Release\) contains files shared from another project (Lab1Triangles.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  main.cpp
+main.cpp(213): warning C4305: '*=': truncation from 'double' to 'float'
+main.cpp(214): warning C4305: '*=': truncation from 'double' to 'float'
+main.cpp(215): warning C4305: '*=': truncation from 'double' to 'float'
+main.cpp(218): warning C4305: '/=': truncation from 'double' to 'float'
+main.cpp(219): warning C4305: '/=': truncation from 'double' to 'float'
+main.cpp(220): warning C4305: '/=': truncation from 'double' to 'float'
+  Generating code
+  4 of 23 functions (17.4%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  Lab1Triangles.vcxproj -> U:\Graphics\Lab2\Lab1Triangles\Release\Lab2.exe
+  Lab1Triangles.vcxproj -> U:\Graphics\Lab2\Lab1Triangles\Release\Lab2.pdb (Full PDB)
