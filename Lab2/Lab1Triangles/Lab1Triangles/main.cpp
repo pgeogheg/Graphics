@@ -2,11 +2,24 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <iostream>
+#include "maths_funcs.h"
 
 // Macro for indexing vertex buffer
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
 using namespace std;
+
+GLuint numVertices = 6;
+GLuint gWorldLocation;
+mat4 World = identity_mat4();
+mat4 World1 = identity_mat4();
+
+GLfloat vertices[] = { -1.0f, -0.5f, 0.0f,
+0.0f, -0.5f, 0.0f,
+-0.5f, 0.5f, 0.0f,
+1.0f, -0.5f, 0.0f,
+0.0f, -0.5f, 0.0f,
+0.5f, 0.5f, 0.0f };
 
 // Vertex Shader (for convenience, it is defined in the main here, but we will be using text files for shaders in future)
 // Note: Input to this shader is the vertex positions that we specified for the triangle. 
@@ -19,11 +32,10 @@ static const char* pVS = "                                                    \n
 in vec3 vPosition;															  \n\
 in vec4 vColor;																  \n\
 out vec4 color;																 \n\
-                                                                              \n\
                                                                                \n\
 void main()                                                                     \n\
 {                                                                                \n\
-    gl_Position = vec4(vPosition.x/2, vPosition.y/2, vPosition.z, 1.0);  \n\
+	gl_Position = vec4(vPosition, 1.0);  \n\
 	color = vColor;							\n\
 }";
 
@@ -116,7 +128,6 @@ GLuint CompileShaders()
 // VBO Functions - click on + to expand
 #pragma region VBO_FUNCTIONS
 GLuint generateObjectBuffer(GLfloat vertices[], GLfloat colors[]) {
-	GLuint numVertices = 6;
 	// Genderate 1 generic buffer object, called VBO
 	GLuint VBO;
 	glGenBuffers(1, &VBO);
@@ -124,7 +135,7 @@ GLuint generateObjectBuffer(GLfloat vertices[], GLfloat colors[]) {
 	// Buffer will contain an array of vertices 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	// After binding, we now fill our object with data, everything in "Vertices" goes to the GPU
-	glBufferData(GL_ARRAY_BUFFER, numVertices * 7 * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, (numVertices * 7 * sizeof(GLfloat)), NULL, GL_STATIC_DRAW);
 	// if you have more data besides vertices (e.g., vertex colours or normals), use glBufferSubData to tell the buffer when the vertices array ends and when the colors start
 	glBufferSubData(GL_ARRAY_BUFFER, 0, numVertices * 3 * sizeof(GLfloat), vertices);
 	glBufferSubData(GL_ARRAY_BUFFER, numVertices * 3 * sizeof(GLfloat), numVertices * 4 * sizeof(GLfloat), colors);
@@ -132,7 +143,6 @@ GLuint generateObjectBuffer(GLfloat vertices[], GLfloat colors[]) {
 }
 
 void linkCurrentBuffertoShader(GLuint shaderProgramID) {
-	GLuint numVertices = 6;
 	// find the location of the variables that we will be using in the shader program
 	GLuint positionID = glGetAttribLocation(shaderProgramID, "vPosition");
 	GLuint colorID = glGetAttribLocation(shaderProgramID, "vColor");
@@ -148,7 +158,6 @@ void linkCurrentBuffertoShader(GLuint shaderProgramID) {
 
 
 void display() {
-
 	glClear(GL_COLOR_BUFFER_BIT);
 	// NB: Make the call to draw the geometry in the currently activated vertex buffer. This is where the GPU starts to work!
 	glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -159,25 +168,115 @@ void display() {
 void init()
 {
 	// Create 3 vertices that make up a triangle that fits on the viewport 
-	GLfloat vertices[] = { -0.75f, -1.0f, 0.0f,
-		0.75f, -1.0f, 0.0f,
-		-0.75f, 1.0f, 0.0f,
-		0.75f, 1.0f, 0.0f,
-		0.75f, -1.0f, 0.0f,
-		-0.75f, 1.0f, 0.0f };
+	/*GLfloat vertices[] = { -1.0f, -0.5f, 0.0f,
+	0.0f, -0.5f, 0.0f,
+	-0.5f, 0.5f, 0.0f,
+	1.0f, -0.5f, 0.0f,
+	0.0f, -0.5f, 0.0f,
+	0.5f, 0.5f, 0.0f };*/
 	// Create a color array that identfies the colors of each vertex (format R, G, B, A)
 	GLfloat colors[] = { 1.0f, 0.0f, 0.0f, 1.0f,
-		1.0f, 1.0f, 0.0f, 1.0f,
-		1.0f, 1.0f, 0.0f, 1.0f,
+		0.0f, 1.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f, 1.0f,
 		1.0f, 0.0f, 0.0f, 1.0f,
-		1.0f, 1.0f, 0.0f, 1.0f,
-		1.0f, 1.0f, 0.0f, 1.0f };
+		0.0f, 1.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f, 1.0f };
+
 	// Set up the shaders
 	GLuint shaderProgramID = CompileShaders();
 	// Put the vertices and colors into a vertex buffer object
 	generateObjectBuffer(vertices, colors);
+
 	// Link the current buffer to the shader
 	linkCurrentBuffertoShader(shaderProgramID);
+}
+
+void keyPressed(unsigned char key, int x, int y) {
+	/* stored like this:
+	0 4 8  12
+	1 5 9  13
+	2 6 10 14
+	3 7 11 15*/
+	World = identity_mat4();
+	World1 = identity_mat4();
+	if (key == 'w') {
+		World.m[13] = 0.1f;
+		World1.m[13] = -0.1f;
+	}
+	else if (key == 's') {
+		World.m[13] = -0.1f;
+		World1.m[13] = 0.1f;
+	}
+	else if (key == 'd') {
+		World.m[12] = 0.1f;
+		World1.m[12] = -0.1f;
+	}
+	else if (key == 'a') {
+		World.m[12] = -0.1f;
+		World1.m[12] = 0.1f;
+	}
+	else if (key == 'l') {
+		World = rotate_z_deg(World, 5.0f);
+		World = rotate_y_deg(World, 5.0f);
+		World = rotate_x_deg(World, 5.0f);
+	}
+	else if (key == 'j') {
+		World = rotate_z_deg(World, -5.0f);
+		World = rotate_y_deg(World, -5.0f);
+		World = rotate_x_deg(World, -5.0f);
+	}
+	else if (key == 'q') {
+		World.m[0] = 1.1f;
+		World.m[5] = 1.1f;
+		World.m[10] = 1.1f;
+	}
+	else if (key == 'e') {
+		World.m[0] = 0.9f;
+		World.m[5] = 0.9f;
+		World.m[10] = 0.9f;
+	}
+	else if (key == 'i') {
+		World.m[0] = 1.2f;
+		World.m[5] = 1.1f;
+		World.m[10] = 1.1f;
+	}
+	else if (key == 'k') {
+		World.m[0] = 0.8f;
+		World.m[5] = 0.9f;
+		World.m[10] = 0.9f;
+	}
+	else if (key == 'n') {
+		World.m[12] = 0.1f;
+		World.m[0] = 1.2;
+		World.m[5] = 1.1;
+		World.m[10] = 1.1;
+		World = rotate_z_deg(World, 5.0f);
+	}
+	else if (key == 'm') {
+		World.m[12] = -0.1f;
+		World.m[0] = 0.8f;
+		World.m[5] = 0.9f;
+		World.m[10] = 0.9f;
+		World = rotate_z_deg(World, -5.0f);
+	}
+
+	for (int i = 0; i < 9; i += 3) {
+		vec4 new_v1 = vec4(vertices[i], vertices[i + 1], vertices[i + 2], 1.0f);
+		new_v1 = World * new_v1;
+		vertices[i] = new_v1.v[0];
+		vertices[i + 1] = new_v1.v[1];
+		vertices[i + 2] = new_v1.v[2];
+
+		new_v1 = vec4(vertices[i + 9], vertices[i + 10], vertices[i + 11], 1.0f);
+		new_v1 = World1 * new_v1;
+		vertices[i + 9] = new_v1.v[0];
+		vertices[i + 10] = new_v1.v[1];
+		vertices[i + 11] = new_v1.v[2];
+	}
+
+	glBufferSubData(GL_ARRAY_BUFFER, 0, numVertices * 3 * sizeof(GLfloat), vertices);
+	glutPostRedisplay();
+
 }
 
 int main(int argc, char** argv) {
@@ -189,7 +288,7 @@ int main(int argc, char** argv) {
 	glutCreateWindow("Hello Triangle");
 	// Tell glut where the display function is
 	glutDisplayFunc(display);
-
+	glutKeyboardFunc(keyPressed);
 	// A call to glewInit() must be done after glut is initialized!
 	GLenum res = glewInit();
 	// Check for any errors
@@ -203,14 +302,3 @@ int main(int argc, char** argv) {
 	glutMainLoop();
 	return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
