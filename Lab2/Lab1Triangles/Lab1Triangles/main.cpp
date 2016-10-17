@@ -14,13 +14,6 @@ GLuint gWorldLocation;
 mat4 World = identity_mat4();
 mat4 World1 = identity_mat4();
 
-GLfloat vertices[] = { -1.0f, -0.5f, 0.0f,
-0.0f, -0.5f, 0.0f,
--0.5f, 0.5f, 0.0f,
-1.0f, -0.5f, 0.0f,
-0.0f, -0.5f, 0.0f,
-0.5f, 0.5f, 0.0f };
-
 // Vertex Shader (for convenience, it is defined in the main here, but we will be using text files for shaders in future)
 // Note: Input to this shader is the vertex positions that we specified for the triangle. 
 // Note: gl_Position is a special built-in variable that is supposed to contain the vertex position (in X, Y, Z, W)
@@ -32,10 +25,11 @@ static const char* pVS = "                                                    \n
 in vec3 vPosition;															  \n\
 in vec4 vColor;																  \n\
 out vec4 color;																 \n\
-                                                                               \n\
+uniform mat4 gWorld;                                                                               \n\
+                                                                              \n\
 void main()                                                                     \n\
 {                                                                                \n\
-	gl_Position = vec4(vPosition, 1.0);  \n\
+	gl_Position = gWorld * vec4(vPosition, 1.0);  \n\
 	color = vColor;							\n\
 }";
 
@@ -156,24 +150,26 @@ void linkCurrentBuffertoShader(GLuint shaderProgramID) {
 }
 #pragma endregion VBO_FUNCTIONS
 
-
 void display() {
 	glClear(GL_COLOR_BUFFER_BIT);
-	// NB: Make the call to draw the geometry in the currently activated vertex buffer. This is where the GPU starts to work!
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	//print(World);
+	glUniformMatrix4fv(gWorldLocation, 1, GL_FALSE, &World.m[0]);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+	//print(World1);
+	glUniformMatrix4fv(gWorldLocation, 1, GL_FALSE, &World1.m[0]);
+	glDrawArrays(GL_TRIANGLES, 3, 6);
 	glutSwapBuffers();
 }
-
 
 void init()
 {
 	// Create 3 vertices that make up a triangle that fits on the viewport 
-	/*GLfloat vertices[] = { -1.0f, -0.5f, 0.0f,
-	0.0f, -0.5f, 0.0f,
-	-0.5f, 0.5f, 0.0f,
-	1.0f, -0.5f, 0.0f,
-	0.0f, -0.5f, 0.0f,
-	0.5f, 0.5f, 0.0f };*/
+	GLfloat vertices[] = { -1.0f, -0.5f, 0.0f,
+		0.0f, -0.5f, 0.0f,
+		-0.5f, 0.5f, 0.0f,
+		1.0f, -0.5f, 0.0f,
+		0.0f, -0.5f, 0.0f,
+		0.5f, 0.5f, 0.0f };
 	// Create a color array that identfies the colors of each vertex (format R, G, B, A)
 	GLfloat colors[] = { 1.0f, 0.0f, 0.0f, 1.0f,
 		0.0f, 1.0f, 0.0f, 1.0f,
@@ -197,23 +193,25 @@ void keyPressed(unsigned char key, int x, int y) {
 	1 5 9  13
 	2 6 10 14
 	3 7 11 15*/
-	World = identity_mat4();
-	World1 = identity_mat4();
+	cout << key;
 	if (key == 'w') {
-		World.m[13] = 0.1f;
-		World1.m[13] = -0.1f;
+		World.m[13] += 0.1f;
+		World1.m[13] += -0.1f;
 	}
 	else if (key == 's') {
-		World.m[13] = -0.1f;
-		World1.m[13] = 0.1f;
+		World.m[13] += -0.1f;
+		World1.m[13] += 0.1f;
 	}
 	else if (key == 'd') {
-		World.m[12] = 0.1f;
-		World1.m[12] = -0.1f;
+		World.m[12] += 0.1f;
+		World1.m[12] += -0.1f;
+	}
+	else if (key == 'g') {
+		World.m[14] += 0.1f;
 	}
 	else if (key == 'a') {
-		World.m[12] = -0.1f;
-		World1.m[12] = 0.1f;
+		World.m[12] += -0.1f;
+		World1.m[12] += 0.1f;
 	}
 	else if (key == 'l') {
 		World = rotate_z_deg(World, 5.0f);
@@ -226,55 +224,40 @@ void keyPressed(unsigned char key, int x, int y) {
 		World = rotate_x_deg(World, -5.0f);
 	}
 	else if (key == 'q') {
-		World.m[0] = 1.1f;
-		World.m[5] = 1.1f;
-		World.m[10] = 1.1f;
+		World.m[0] *= 1.1f;
+		World.m[5] *= 1.1f;
+		World.m[10] *= 1.1f;
 	}
 	else if (key == 'e') {
-		World.m[0] = 0.9f;
-		World.m[5] = 0.9f;
-		World.m[10] = 0.9f;
+		World.m[0] *= 0.9f;
+		World.m[5] *= 0.9f;
+		World.m[10] *= 0.9f;
 	}
 	else if (key == 'i') {
-		World.m[0] = 1.2f;
-		World.m[5] = 1.1f;
-		World.m[10] = 1.1f;
+		World.m[0] *= 1.2f;
+		World.m[5] *= 1.1f;
+		World.m[10] *= 1.1f;
 	}
 	else if (key == 'k') {
-		World.m[0] = 0.8f;
-		World.m[5] = 0.9f;
-		World.m[10] = 0.9f;
+		World.m[0] *= 0.8f;
+		World.m[5] *= 0.9f;
+		World.m[10] *= 0.9f;
 	}
 	else if (key == 'n') {
-		World.m[12] = 0.1f;
-		World.m[0] = 1.2;
-		World.m[5] = 1.1;
-		World.m[10] = 1.1;
+		World.m[12] += 0.1f;
+		World.m[0] *= 1.2f;
+		World.m[5] *= 1.1f;
+		World.m[10] *= 1.1f;
 		World = rotate_z_deg(World, 5.0f);
 	}
 	else if (key == 'm') {
-		World.m[12] = -0.1f;
-		World.m[0] = 0.8f;
-		World.m[5] = 0.9f;
-		World.m[10] = 0.9f;
+		World.m[12] += -0.1f;
+		World.m[0] *= 0.8f;
+		World.m[5] *= 0.9f;
+		World.m[10] *= 0.9f;
 		World = rotate_z_deg(World, -5.0f);
 	}
-
-	for (int i = 0; i < 9; i += 3) {
-		vec4 new_v1 = vec4(vertices[i], vertices[i + 1], vertices[i + 2], 1.0f);
-		new_v1 = World * new_v1;
-		vertices[i] = new_v1.v[0];
-		vertices[i + 1] = new_v1.v[1];
-		vertices[i + 2] = new_v1.v[2];
-
-		new_v1 = vec4(vertices[i + 9], vertices[i + 10], vertices[i + 11], 1.0f);
-		new_v1 = World1 * new_v1;
-		vertices[i + 9] = new_v1.v[0];
-		vertices[i + 10] = new_v1.v[1];
-		vertices[i + 11] = new_v1.v[2];
-	}
-
-	glBufferSubData(GL_ARRAY_BUFFER, 0, numVertices * 3 * sizeof(GLfloat), vertices);
+	glUniformMatrix4fv(gWorldLocation, 1, GL_FALSE, &World.m[0]);
 	glutPostRedisplay();
 
 }
