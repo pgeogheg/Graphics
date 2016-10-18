@@ -157,7 +157,7 @@ void display() {
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 	//print(World1);
 	glUniformMatrix4fv(gWorldLocation, 1, GL_FALSE, &World1.m[0]);
-	glDrawArrays(GL_TRIANGLES, 3, 6);
+	glDrawArrays(GL_TRIANGLES, 3, 3);
 	glutSwapBuffers();
 }
 
@@ -185,6 +185,8 @@ void init()
 
 	// Link the current buffer to the shader
 	linkCurrentBuffertoShader(shaderProgramID);
+
+	gWorldLocation = glGetUniformLocation(shaderProgramID, "gWorld");
 }
 
 void keyPressed(unsigned char key, int x, int y) {
@@ -193,14 +195,21 @@ void keyPressed(unsigned char key, int x, int y) {
 	1 5 9  13
 	2 6 10 14
 	3 7 11 15*/
-	cout << key;
 	if (key == 'w') {
 		World.m[13] += 0.1f;
-		World1.m[13] += -0.1f;
+		World1.m[12] -= 0.5f;
+		World1 = rotate_z_deg(World1, 5.0f);
+		World1 = rotate_y_deg(World1, 5.0f);
+		World1 = rotate_x_deg(World1, 5.0f);
+		World1.m[12] += 0.5f;
 	}
 	else if (key == 's') {
 		World.m[13] += -0.1f;
-		World1.m[13] += 0.1f;
+		World1.m[12] -= 0.5f;
+		World1 = rotate_z_deg(World1, -5.0f);
+		World1 = rotate_y_deg(World1, -5.0f);
+		World1 = rotate_x_deg(World1, -5.0f);
+		World1.m[12] += 0.5f;
 	}
 	else if (key == 'd') {
 		World.m[12] += 0.1f;
@@ -214,14 +223,18 @@ void keyPressed(unsigned char key, int x, int y) {
 		World1.m[12] += 0.1f;
 	}
 	else if (key == 'l') {
+		World.m[12] += 0.5f;
 		World = rotate_z_deg(World, 5.0f);
 		World = rotate_y_deg(World, 5.0f);
 		World = rotate_x_deg(World, 5.0f);
+		World.m[12] -= 0.5f;
 	}
 	else if (key == 'j') {
+		World.m[12] += 0.5f;
 		World = rotate_z_deg(World, -5.0f);
 		World = rotate_y_deg(World, -5.0f);
 		World = rotate_x_deg(World, -5.0f);
+		World.m[12] -= 0.5f;
 	}
 	else if (key == 'q') {
 		World.m[0] *= 1.1f;
@@ -256,6 +269,10 @@ void keyPressed(unsigned char key, int x, int y) {
 		World.m[5] *= 0.9f;
 		World.m[10] *= 0.9f;
 		World = rotate_z_deg(World, -5.0f);
+	}
+	else if (key == 'c') {
+		World = identity_mat4();
+		World1 = identity_mat4();
 	}
 	glUniformMatrix4fv(gWorldLocation, 1, GL_FALSE, &World.m[0]);
 	glutPostRedisplay();
