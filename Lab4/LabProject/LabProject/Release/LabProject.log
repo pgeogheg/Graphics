@@ -1,0 +1,51 @@
+﻿  main.cpp
+c:\users\paddy geoghegan\desktop\college\graphics\lab 3 source code\teapot.h(2980): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+c:\users\paddy geoghegan\desktop\college\graphics\lab 3 source code\teapot.h(2980): warning C4305: 'initializing': truncation from 'double' to 'float'
+c:\users\paddy geoghegan\desktop\college\graphics\lab 3 source code\teapot.h(5959): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+c:\users\paddy geoghegan\desktop\college\graphics\lab 3 source code\teapot.h(5959): warning C4305: 'initializing': truncation from 'double' to 'float'
+c:\users\paddy geoghegan\desktop\college\graphics\lab 3 source code\teapot.h(8938): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+c:\users\paddy geoghegan\desktop\college\graphics\lab 3 source code\teapot.h(8938): warning C4305: 'initializing': truncation from 'double' to 'float'
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\main.cpp(28): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\main.cpp(29): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\main.cpp(140): warning C4244: 'argument': conversion from 'float' to 'GLsizeiptr', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\main.cpp(144): warning C4244: 'argument': conversion from 'float' to 'GLsizeiptr', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\main.cpp(182): warning C4305: 'argument': truncation from 'double' to 'float'
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\main.cpp(189): warning C4244: 'argument': conversion from 'float' to 'GLsizei', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\main.cpp(206): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  maths_funcs.cpp
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(132): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(250): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(254): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(255): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(430): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(432): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(433): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(434): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(435): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(442): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(444): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(445): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(446): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(447): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(454): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(456): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(457): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(458): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(459): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(520): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(521): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(583): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(584): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(585): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(586): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(591): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(629): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(655): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(665): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(666): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+..\..\..\..\..\Desktop\College\Graphics\Lab 3 Source Code\maths_funcs.cpp(667): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  Generating code
+  All 197 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  LabProject.vcxproj -> C:\Users\Paddy Geoghegan\Documents\Visual Studio 2015\Projects\LabProject\Release\LabProject.exe
+  LabProject.vcxproj -> C:\Users\Paddy Geoghegan\Documents\Visual Studio 2015\Projects\LabProject\Release\LabProject.pdb (Full PDB)

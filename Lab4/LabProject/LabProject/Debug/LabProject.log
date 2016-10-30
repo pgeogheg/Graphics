@@ -1,0 +1,19 @@
+﻿  main.cpp
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\teapot.h(2980): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\teapot.h(2980): warning C4305: 'initializing': truncation from 'double' to 'float'
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\teapot.h(5959): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\teapot.h(5959): warning C4305: 'initializing': truncation from 'double' to 'float'
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\teapot.h(8938): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\teapot.h(8938): warning C4305: 'initializing': truncation from 'double' to 'float'
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\main.cpp(136): warning C4244: 'argument': conversion from 'float' to 'GLsizeiptr', possible loss of data
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\main.cpp(140): warning C4244: 'argument': conversion from 'float' to 'GLsizeiptr', possible loss of data
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\main.cpp(175): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\main.cpp(186): warning C4244: 'argument': conversion from 'float' to 'GLsizei', possible loss of data
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\main.cpp(197): warning C4244: 'argument': conversion from 'float' to 'GLsizei', possible loss of data
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\main.cpp(201): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\main.cpp(206): warning C4244: 'argument': conversion from 'float' to 'GLsizei', possible loss of data
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\main.cpp(210): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\main.cpp(214): warning C4244: 'argument': conversion from 'float' to 'GLsizei', possible loss of data
+c:\users\paddy geoghegan\desktop\college\graphics\lab4 source code\main.cpp(224): warning C4244: 'argument': conversion from 'float' to 'GLsizei', possible loss of data
+  LabProject.vcxproj -> C:\Users\Paddy Geoghegan\Desktop\College\Graphics\Lab4\LabProject\Debug\LabProject.exe
+  LabProject.vcxproj -> C:\Users\Paddy Geoghegan\Desktop\College\Graphics\Lab4\LabProject\Debug\LabProject.pdb (Partial PDB)
