@@ -216,13 +216,10 @@ void display() {
 	mat4 local5 = identity_mat4();
 	local5 = translate(local5, vec3(0.0, -10.0, 0.0));
 	local5 = scale(local5, vec3(4.0, 2.0, 2.0));
-	//local5 = rotate_z_deg(local5, (45 * cos(rotatez/8)) - 45);
-	//local5 = rotate_y_deg(local5, 25 * sin(rotatez / 4));
-	//local5 = rotate_x_deg(local5, 25 * sin(rotatez / 4));
 	mat4 global5 = local1*local5;
 	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, global5.m);
 	glDrawArrays(GL_TRIANGLES, 0, teapot_vertex_count);
-
+	
 	glutSwapBuffers();
 }
 
