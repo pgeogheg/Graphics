@@ -1,0 +1,6 @@
+#version 330
+
+in vec4 fragment_colour;
+void main(){
+	gl_FragColor = fragment_colour;
+}

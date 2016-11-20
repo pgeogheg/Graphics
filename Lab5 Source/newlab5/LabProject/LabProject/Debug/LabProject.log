@@ -1,0 +1,8 @@
+﻿  main.cpp
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(276): warning C4305: 'argument': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(331): warning C4305: 'argument': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(334): warning C4305: 'argument': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(337): warning C4305: 'argument': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(340): warning C4305: 'argument': truncation from 'double' to 'float'
+  LabProject.vcxproj -> U:\Graphics\Lab5 Source\newlab5\LabProject\Debug\LabProject.exe
+  LabProject.vcxproj -> U:\Graphics\Lab5 Source\newlab5\LabProject\Debug\LabProject.pdb (Partial PDB)
