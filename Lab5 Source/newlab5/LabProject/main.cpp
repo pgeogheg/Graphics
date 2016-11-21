@@ -16,19 +16,25 @@
 #include <math.h>
 #include <vector> // STL dynamic memory.
 
+const int MODEL_COUNT = 3;
+int prevMouseX = 0;
+int prevMouseY = 0;
 
 /*----------------------------------------------------------------------------
                    MESH TO LOAD
   ----------------------------------------------------------------------------*/
 // this mesh is a dae file format but you should be able to use any other format too, obj is typically what is used
 // put the mesh in your project directory, or provide a filepath for it here
-char* MESH_NAMES[] = { "../monkeyhead.dae","../castle.dae" };
+char* MESH_NAMES[] = { "../mew.obj", "../voltorb2.obj", "../arena.obj" };
 /*----------------------------------------------------------------------------
   ----------------------------------------------------------------------------*/
 
-std::vector<float> g_vp, g_vn, g_vt;
-int g_point_count = 0;
+std::vector<float>* g_vp = new std::vector<float>[MODEL_COUNT];
+std::vector<float>* g_vn = new std::vector<float>[MODEL_COUNT];
+std::vector<float>* g_vt = new std::vector<float>[MODEL_COUNT];
 
+int g_point_count[MODEL_COUNT] = {0, 0, 0};
+GLuint vaos[MODEL_COUNT] = { 0, 0, 0 };
 
 // Macro for indexing vertex buffer
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
@@ -53,7 +59,7 @@ mat4 cameraRotate    = identity_mat4();
                    MESH LOADING FUNCTION
   ----------------------------------------------------------------------------*/
 
-bool load_mesh (const char* file_name) {
+bool load_mesh (const char* file_name, int count) {
   const aiScene* scene = aiImportFile (file_name, aiProcess_Triangulate); // TRIANGLES!
         fprintf (stderr, "ERROR: reading mesh %s\n", file_name);
   if (!scene) {
@@ -66,31 +72,31 @@ bool load_mesh (const char* file_name) {
   printf ("  %i materials\n", scene->mNumMaterials);
   printf ("  %i meshes\n", scene->mNumMeshes);
   printf ("  %i textures\n", scene->mNumTextures);
-  
+  g_point_count[count] = 0;
   for (unsigned int m_i = 0; m_i < scene->mNumMeshes; m_i++) {
     const aiMesh* mesh = scene->mMeshes[m_i];
     printf ("    %i vertices in mesh\n", mesh->mNumVertices);
-    g_point_count += mesh->mNumVertices;
+    g_point_count[count] += mesh->mNumVertices;
     for (unsigned int v_i = 0; v_i < mesh->mNumVertices; v_i++) {
       if (mesh->HasPositions ()) {
         const aiVector3D* vp = &(mesh->mVertices[v_i]);
         //printf ("      vp %i (%f,%f,%f)\n", v_i, vp->x, vp->y, vp->z);
-        g_vp.push_back (vp->x);
-        g_vp.push_back (vp->y);
-        g_vp.push_back (vp->z);
+        g_vp[count].push_back (vp->x);
+        g_vp[count].push_back (vp->y);
+        g_vp[count].push_back (vp->z);
       }
       if (mesh->HasNormals ()) {
         const aiVector3D* vn = &(mesh->mNormals[v_i]);
         //printf ("      vn %i (%f,%f,%f)\n", v_i, vn->x, vn->y, vn->z);
-        g_vn.push_back (vn->x);
-        g_vn.push_back (vn->y);
-        g_vn.push_back (vn->z);
+        g_vn[count].push_back (vn->x);
+        g_vn[count].push_back (vn->y);
+        g_vn[count].push_back (vn->z);
       }
       if (mesh->HasTextureCoords (0)) {
         const aiVector3D* vt = &(mesh->mTextureCoords[0][v_i]);
         //printf ("      vt %i (%f,%f)\n", v_i, vt->x, vt->y);
-        g_vt.push_back (vt->x);
-        g_vt.push_back (vt->y);
+        g_vt[count].push_back (vt->x);
+        g_vt[count].push_back (vt->y);
       }
       if (mesh->HasTangentsAndBitangents ()) {
         // NB: could store/print tangents here
@@ -209,8 +215,8 @@ void generateObjectBufferMesh() {
 	//Note: you may get an error "vector subscript out of range" if you are using this code for a mesh that doesnt have positions and normals
 	//Might be an idea to do a check for that before generating and binding the buffer.
 	int i = 0;
-	for (i = 0; i < 2; i++) {
-		load_mesh(MESH_NAMES[i]);
+	for (i = 0; i < MODEL_COUNT; i++) {
+		load_mesh(MESH_NAMES[i], i);
 		unsigned int vp_vbo = i;
 		loc1 = glGetAttribLocation(shaderProgramID, "vertex_position");
 		loc2 = glGetAttribLocation(shaderProgramID, "vertex_normal");
@@ -218,11 +224,11 @@ void generateObjectBufferMesh() {
 
 		glGenBuffers(1, &vp_vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, vp_vbo);
-		glBufferData(GL_ARRAY_BUFFER, g_point_count * 3 * sizeof(float), &g_vp[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, g_point_count[i] * 3 * sizeof(float), &g_vp[i][0], GL_STATIC_DRAW);
 		unsigned int vn_vbo = i;
 		glGenBuffers(1, &vn_vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, vn_vbo);
-		glBufferData(GL_ARRAY_BUFFER, g_point_count * 3 * sizeof(float), &g_vn[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, g_point_count[i] * 3 * sizeof(float), &g_vn[i][0], GL_STATIC_DRAW);
 
 		//	This is for texture coordinates which you don't currently need, so I have commented it out
 		//	unsigned int vt_vbo = 0;
@@ -230,9 +236,8 @@ void generateObjectBufferMesh() {
 		//	glBindBuffer (GL_ARRAY_BUFFER, vt_vbo);
 		//	glBufferData (GL_ARRAY_BUFFER, g_point_count * 2 * sizeof (float), &g_vt[0], GL_STATIC_DRAW);
 
-		unsigned int vao;
-		glGenVertexArrays(2, &vao);
-		glBindVertexArray(vao);
+		glGenVertexArrays(1, &(vaos[i]));
+		glBindVertexArray(vaos[i]);
 
 		glEnableVertexAttribArray(loc1);
 		glBindBuffer(GL_ARRAY_BUFFER, vp_vbo);
@@ -245,7 +250,7 @@ void generateObjectBufferMesh() {
 		//	glEnableVertexAttribArray (loc3);
 		//	glBindBuffer (GL_ARRAY_BUFFER, vt_vbo);
 		//	glVertexAttribPointer (loc3, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-
+		printf("g_point: %i , %i \n", i, g_point_count[i]);
 	}
 	
 }
@@ -282,8 +287,36 @@ void display(){
 	glUniformMatrix4fv (view_mat_location, 1, GL_FALSE, view.m);
 	glUniformMatrix4fv (matrix_location, 1, GL_FALSE, model.m);
 
-	glDrawArrays (GL_TRIANGLES, 0, g_point_count);
+	/*
+	int i;
+	for (i = 0; i < MODEL_COUNT; i++) {
+		glBindVertexArray(vaos[i]);
+		glDrawArrays(GL_TRIANGLES, 0, g_point_count[i]);
+	}
+	*/
 
+	// Draw Mew
+	glBindVertexArray(vaos[0]);
+	model = scale(identity_mat4(), vec3(0.2, 0.2, 0.2));
+	model = translate(model, vec3(0.0, 0.0, 0.0));
+	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model.m);
+	glDrawArrays(GL_TRIANGLES, 0, g_point_count[0]);
+	
+	// Draw Voltorb
+	glBindVertexArray(vaos[1]);
+	model = rotate_z_deg(identity_mat4(), 180);
+	model = scale(model, vec3(0.2, 0.2, 0.2));
+	model = rotate_x_deg(model, 180);
+	model = rotate_y_deg(model, 90);
+	model = translate(model, vec3(0.0, 0.8, 10.0));
+	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model.m);
+	glDrawArrays(GL_TRIANGLES, 0, g_point_count[1]);
+
+	// Draw Arena
+	glBindVertexArray(vaos[2]);
+	model = translate(identity_mat4(), vec3(0.0, -0.5, 0.0));
+	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model.m);
+	glDrawArrays(GL_TRIANGLES, 0, g_point_count[2]);
 	//mat4 model2 = translate(identity_mat4(), vec3(2.5, 0.0, 0.0));
 
 	//glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, persp_proj.m);
@@ -337,12 +370,18 @@ void keypress(unsigned char key, int x, int y) {
 	}
 	else if (key == 's') {
 		cameraTranslate = translate(cameraTranslate, vec3(0.0, 0.0, -0.1));
-	} 
+	}
+	else if (key == 'q') {
+		cameraTranslate = translate(cameraTranslate, vec3(0.0, 0.1, 0.0));
+	}
+	else if (key == 'e') {
+		cameraTranslate = translate(cameraTranslate, vec3(0.0, -0.1, 0.0));
+	}
 	else if (key == 'j') {
-		cameraRotate = rotate_y_deg(cameraRotate, 1.0);
+		cameraRotate = rotate_y_deg(cameraRotate, -1.0);
 	}
 	else if (key == 'l') {
-		cameraRotate = rotate_y_deg(cameraRotate, -1.0);
+		cameraRotate = rotate_y_deg(cameraRotate, 1.0);
 	}
 	else if (key == 'i') {
 		cameraRotate = rotate_x_deg(cameraRotate, -1.0);
@@ -350,6 +389,28 @@ void keypress(unsigned char key, int x, int y) {
 	else if (key == 'k') {
 		cameraRotate = rotate_x_deg(cameraRotate, 1.0);
 	}
+}
+
+void mouseMove(int x, int y) {
+	if (x < prevMouseX) {
+		cameraRotate = rotate_y_deg(cameraRotate, 1.0);
+		prevMouseX = x;
+	}
+	else if (x > prevMouseX) {
+		cameraRotate = rotate_y_deg(cameraRotate, -1.0);
+		prevMouseX = x;
+	}
+
+	/*
+	if (y < prevMouseY) {
+		cameraRotate = rotate_x_deg(cameraRotate, -1.0);
+		prevMouseY = y;
+	}
+	else if (y > prevMouseY) {
+		cameraRotate = rotate_x_deg(cameraRotate, 1.0);
+		prevMouseY = y;
+	}
+	*/
 }
 
 int main(int argc, char** argv){
@@ -364,6 +425,7 @@ int main(int argc, char** argv){
 	glutDisplayFunc(display);
 	glutIdleFunc(updateScene);
 	glutKeyboardFunc(keypress);
+	glutPassiveMotionFunc(mouseMove);
 
 	 // A call to glewInit() must be done after glut is initialized!
     GLenum res = glewInit();
