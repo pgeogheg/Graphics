@@ -6,6 +6,7 @@
 #include <GL/freeglut.h>
 #include <iostream>
 #include "maths_funcs.h"
+#include <SOIL.h>
 
 // Assimp includes
 
@@ -19,6 +20,8 @@
 const int MODEL_COUNT = 3;
 int prevMouseX = 0;
 int prevMouseY = 0;
+
+int texture[1];
 
 /*----------------------------------------------------------------------------
                    MESH TO LOAD
@@ -298,18 +301,25 @@ void display(){
 	// Draw Mew
 	glBindVertexArray(vaos[0]);
 	model = scale(identity_mat4(), vec3(0.2, 0.2, 0.2));
-	model = translate(model, vec3(0.0, 0.0, 0.0));
+	model = translate(model, vec3(0.0, 0.65 + sin(rotate_y / 50), 0.0));
 	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model.m);
 	glDrawArrays(GL_TRIANGLES, 0, g_point_count[0]);
 	
 	// Draw Voltorb
 	glBindVertexArray(vaos[1]);
-	model = rotate_z_deg(identity_mat4(), 180);
-	model = scale(model, vec3(0.2, 0.2, 0.2));
-	model = rotate_x_deg(model, 180);
-	model = rotate_y_deg(model, 90);
-	model = translate(model, vec3(0.0, 0.8, 10.0));
-	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model.m);
+	mat4 v_model = rotate_z_deg(identity_mat4(), 180);
+	v_model = scale(v_model, vec3(0.2, 0.2, 0.2));
+	v_model = rotate_x_deg(v_model, 180);
+	v_model = rotate_y_deg(v_model, rotate_y);
+	v_model = translate(v_model, vec3(0.0, 0.8, 10.0));
+	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, v_model.m);
+	glDrawArrays(GL_TRIANGLES, 0, g_point_count[1]);
+
+	mat4 model2 = translate(identity_mat4(), vec3(10.0, 0.0, 0.0));
+
+	model2 = translate(model2, vec3(0.0, sin(rotate_y/5), 0.0));
+	model2 = v_model * model2;
+	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model2.m);
 	glDrawArrays(GL_TRIANGLES, 0, g_point_count[1]);
 
 	// Draw Arena
@@ -317,16 +327,36 @@ void display(){
 	model = translate(identity_mat4(), vec3(0.0, -0.5, 0.0));
 	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model.m);
 	glDrawArrays(GL_TRIANGLES, 0, g_point_count[2]);
-	//mat4 model2 = translate(identity_mat4(), vec3(2.5, 0.0, 0.0));
 
-	//glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, persp_proj.m);
-	//glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, view.m);
-	//glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model2.m);
-
-	//glDrawArrays(GL_TRIANGLES, 0, g_point_count);
+	// draw Mini Voltorb
 
     glutSwapBuffers();
 }
+
+/*
+int LoadGLTextures()                                    // Load Bitmaps And Convert To Textures
+{
+	// load an image file directly as a new OpenGL texture 
+	texture[0] = SOIL_load_OGL_texture
+	(
+		"../img_test.bmp",
+		SOIL_LOAD_AUTO,
+		SOIL_CREATE_NEW_ID,
+		SOIL_FLAG_INVERT_Y
+	);
+
+	if (texture[0] == 0)
+		return false;
+
+
+	// Typical Texture Generation Using Data From The Bitmap
+	glBindTexture(GL_TEXTURE_2D, texture[0]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	return true;                                        // Return Success
+}
+*/
 
 
 void updateScene() {	

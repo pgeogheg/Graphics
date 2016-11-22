@@ -88,12 +88,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>U:\Graphics\Lab5 Source\newlab5\LabProject\assimp\include;U:\Graphics\Lab5 Source\newlab5\LabProject\glew-1.10.0\include;U:\Graphics\Lab5 Source\newlab5\LabProject\freeglut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>U:\Graphics\Lab5 Source\newlab5\LabProject\Simple OpenGL Image Library\src;U:\Graphics\Lab5 Source\newlab5\LabProject\assimp\include;U:\Graphics\Lab5 Source\newlab5\LabProject\glew-1.10.0\include;U:\Graphics\Lab5 Source\newlab5\LabProject\freeglut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>U:\Graphics\Lab5 Source\newlab5\LabProject\assimp\lib\Release;U:\Graphics\Lab5 Source\newlab5\LabProject\glew-1.10.0\lib\Release\Win32;U:\Graphics\Lab5 Source\newlab5\LabProject\freeglut\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>assimp.lib;freeglut.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>U:\Graphics\Lab5 Source\newlab5\LabProject\Simple OpenGL Image Library\lib;U:\Graphics\Lab5 Source\newlab5\LabProject\assimp\lib\Release;U:\Graphics\Lab5 Source\newlab5\LabProject\glew-1.10.0\lib\Release\Win32;U:\Graphics\Lab5 Source\newlab5\LabProject\freeglut\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libSOIL.a;assimp.lib;freeglut.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
