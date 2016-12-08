@@ -1,6 +1,16 @@
 #version 330
 
+// Interpolated values from the vertex shaders
+// in vec2 UV;
+
+// Ouput data
+// out vec3 color;
+
+// Values that stay constant for the whole mesh.
+// uniform sampler2D myTextureSampler;
+
 in vec4 fragment_colour;
 void main(){
 	gl_FragColor = fragment_colour;
+	//color = texture( myTextureSampler, UV ).rgb;
 }

@@ -17,18 +17,56 @@
 #include <math.h>
 #include <vector> // STL dynamic memory.
 
-const int MODEL_COUNT = 3;
+const int MODEL_COUNT = 4;
 int prevMouseX = 0;
 int prevMouseY = 0;
 
-int texture[1];
+
+//----------------------
+// INVADER SETTINGS
+//----------------------
+// !! Do NOT change these !!
+float invaderRotate = 0.0;
+float invaderHeight = 0.0;
+float invaderDropCount = 0.0;
+
+// You can change these
+int invaderRow = 3;
+int invaderColumn = 9;
+int invaders[3][9] = {
+	{ 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+	{ 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+	{ 1, 1, 1, 1, 1, 1, 1, 1, 1 }
+};
+float invaderStartHeight = 10.0;
+float invaderSpeed = 0.05;
+float invaderDropFreq = 360; // degrees traveled in cicle before dropping
+int invaderCount = 10;
+int invaderTimer = 0;
+
+//----------------------
+// BULLET SETTINGS
+//----------------------
+class Bullet {
+public:
+	float xPos = 0.0;  
+	float yPos = 0.0;
+	bool active = false;
+};
+
+int maxNumberOfBullets = 1;
+Bullet b1;
+Bullet ammo[1] = {
+	b1
+};
+
 
 /*----------------------------------------------------------------------------
                    MESH TO LOAD
   ----------------------------------------------------------------------------*/
 // this mesh is a dae file format but you should be able to use any other format too, obj is typically what is used
 // put the mesh in your project directory, or provide a filepath for it here
-char* MESH_NAMES[] = { "../mew.obj", "../voltorb2.obj", "../arena.obj" };
+char* MESH_NAMES[] = { "../PlayerShip.obj", "../invader.obj", "../arena.obj", "../bullet.obj" };
 /*----------------------------------------------------------------------------
   ----------------------------------------------------------------------------*/
 
@@ -36,8 +74,8 @@ std::vector<float>* g_vp = new std::vector<float>[MODEL_COUNT];
 std::vector<float>* g_vn = new std::vector<float>[MODEL_COUNT];
 std::vector<float>* g_vt = new std::vector<float>[MODEL_COUNT];
 
-int g_point_count[MODEL_COUNT] = {0, 0, 0};
-GLuint vaos[MODEL_COUNT] = { 0, 0, 0 };
+int g_point_count[MODEL_COUNT] = {0, 0, 0, 0};
+GLuint vaos[MODEL_COUNT] = {0, 0, 0, 0};
 
 // Macro for indexing vertex buffer
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
@@ -53,8 +91,9 @@ int height = 600;
 GLuint loc1, loc2, loc3;
 GLfloat rotate_y = 0.0f;
 
-mat4 cameraTranslate = translate(identity_mat4(),vec3(0.0, 0.0, -5.0));
-mat4 cameraRotate    = identity_mat4();
+mat4 cameraTranslate = translate(identity_mat4(),vec3(0.0, 0.0, 0.0));
+mat4 cameraRotate    = rotate_x_deg(identity_mat4(), -30);
+float cameraAlign = 0.0;
 
 
 #pragma region MESH LOADING
@@ -172,6 +211,7 @@ GLuint CompileShaders()
     shaderProgramID = glCreateProgram();
     if (shaderProgramID == 0) {
         fprintf(stderr, "Error creating shader program\n");
+		Sleep(10000000);
         exit(1);
     }
 
@@ -188,6 +228,7 @@ GLuint CompileShaders()
 	if (Success == 0) {
 		glGetProgramInfoLog(shaderProgramID, sizeof(ErrorLog), NULL, ErrorLog);
 		fprintf(stderr, "Error linking shader program: '%s'\n", ErrorLog);
+		Sleep(10000000);
         exit(1);
 	}
 
@@ -198,6 +239,7 @@ GLuint CompileShaders()
     if (!Success) {
         glGetProgramInfoLog(shaderProgramID, sizeof(ErrorLog), NULL, ErrorLog);
         fprintf(stderr, "Invalid shader program: '%s'\n", ErrorLog);
+		Sleep(10000000);
         exit(1);
     }
 	// Finally, use the linked shader program
@@ -263,7 +305,6 @@ void generateObjectBufferMesh() {
 
 
 void display(){
-
 	// tell GL to only draw onto a pixel if the shape is closer to the viewer
 	glEnable (GL_DEPTH_TEST); // enable depth-testing
 	glDepthFunc (GL_LESS); // depth-testing interprets a smaller value as "closer"
@@ -282,81 +323,53 @@ void display(){
 	mat4 view = cameraRotate * cameraTranslate;
 	mat4 persp_proj = perspective(45.0, (float)width/(float)height, 0.1, 100.0);
 	mat4 model = identity_mat4 ();
-	//view = translate (view, vec3 (0.0, 0.0, -5.0f));
-	//model = rotate_y_deg(model, rotate_y);
 
 	// update uniforms & draw
 	glUniformMatrix4fv (proj_mat_location, 1, GL_FALSE, persp_proj.m);
 	glUniformMatrix4fv (view_mat_location, 1, GL_FALSE, view.m);
 	glUniformMatrix4fv (matrix_location, 1, GL_FALSE, model.m);
 
-	/*
-	int i;
-	for (i = 0; i < MODEL_COUNT; i++) {
-		glBindVertexArray(vaos[i]);
-		glDrawArrays(GL_TRIANGLES, 0, g_point_count[i]);
-	}
-	*/
-
-	// Draw Mew
+	// Draw SHIP
 	glBindVertexArray(vaos[0]);
-	model = scale(identity_mat4(), vec3(0.2, 0.2, 0.2));
-	model = translate(model, vec3(0.0, 0.65 + sin(rotate_y / 50), 0.0));
+	model = rotate_y_deg(model, -90);
+	model = rotate_x_deg(model, 30);
+	model = scale(model, vec3(0.1, 0.1, 0.1));
+	model = translate(model, vec3(0.0, 0.25, -2.0));
+	model = rotate_y_deg(model, cameraAlign);
 	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model.m);
 	glDrawArrays(GL_TRIANGLES, 0, g_point_count[0]);
 	
-	// Draw Voltorb
+	// Draw INVADERS
 	glBindVertexArray(vaos[1]);
-	mat4 v_model = rotate_z_deg(identity_mat4(), 180);
-	v_model = scale(v_model, vec3(0.2, 0.2, 0.2));
-	v_model = rotate_x_deg(v_model, 180);
-	v_model = rotate_y_deg(v_model, rotate_y);
-	v_model = translate(v_model, vec3(0.0, 0.8, 10.0));
-	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, v_model.m);
-	glDrawArrays(GL_TRIANGLES, 0, g_point_count[1]);
+	int i, j;
+	for (i = 0; i < invaderRow; i++) {
+		for (j = 0; j < invaderColumn; j++) {
+			mat4 v_model = identity_mat4();
+			v_model = rotate_x_deg(v_model, 120);
+			v_model = scale(v_model, vec3(0.05, 0.05, 0.05));
+			v_model = translate(v_model, vec3(0.0, (5 - (0.5 * i) - invaderHeight), -5.0));
+			v_model = rotate_y_deg(v_model, invaderRotate + (10 * j));
+			glUniformMatrix4fv(matrix_location, 1, GL_FALSE, v_model.m);
+			glDrawArrays(GL_TRIANGLES, 0, g_point_count[1]);
+		}
+	}
 
-	mat4 model2 = translate(identity_mat4(), vec3(10.0, 0.0, 0.0));
+	invaderRotate += invaderSpeed;
+	invaderDropCount += invaderSpeed;
+	if (invaderDropFreq <= invaderDropCount) {
+		invaderHeight += 0.2;
+		invaderDropCount = 0;
+	}
 
-	model2 = translate(model2, vec3(0.0, sin(rotate_y/5), 0.0));
-	model2 = v_model * model2;
-	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model2.m);
-	glDrawArrays(GL_TRIANGLES, 0, g_point_count[1]);
 
-	// Draw Arena
+	// Draw ARENA
 	glBindVertexArray(vaos[2]);
 	model = translate(identity_mat4(), vec3(0.0, -0.5, 0.0));
 	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model.m);
 	glDrawArrays(GL_TRIANGLES, 0, g_point_count[2]);
 
-	// draw Mini Voltorb
-
     glutSwapBuffers();
 }
-
-/*
-int LoadGLTextures()                                    // Load Bitmaps And Convert To Textures
-{
-	// load an image file directly as a new OpenGL texture 
-	texture[0] = SOIL_load_OGL_texture
-	(
-		"../img_test.bmp",
-		SOIL_LOAD_AUTO,
-		SOIL_CREATE_NEW_ID,
-		SOIL_FLAG_INVERT_Y
-	);
-
-	if (texture[0] == 0)
-		return false;
-
-
-	// Typical Texture Generation Using Data From The Bitmap
-	glBindTexture(GL_TEXTURE_2D, texture[0]);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	return true;                                        // Return Success
-}
-*/
 
 
 void updateScene() {	
@@ -388,40 +401,34 @@ void init()
 
 // Placeholder code for the keypress
 void keypress(unsigned char key, int x, int y) {
-
 	if(key=='d'){
-		cameraTranslate = translate(cameraTranslate, vec3(-0.1, 0.0, 0.0));
+		cameraRotate = rotate_x_deg(cameraRotate, 30);
+		cameraRotate = rotate_y_deg(cameraRotate, 1.0);
+		cameraRotate = rotate_x_deg(cameraRotate, -30);
+		cameraAlign -= 1.0;
 	}
 	else if (key == 'a') {
-		cameraTranslate = translate(cameraTranslate, vec3(0.1, 0.0, 0.0));
+		cameraRotate = rotate_x_deg(cameraRotate, 30);
+		cameraRotate = rotate_y_deg(cameraRotate, -1.0);
+		cameraRotate = rotate_x_deg(cameraRotate, -30);
+		cameraAlign += 1.0;
 	}
 	else if (key == 'w') {
-		cameraTranslate = translate(cameraTranslate, vec3(0.0, 0.0, 0.1));
+		// SHOOT
 	}
-	else if (key == 's') {
-		cameraTranslate = translate(cameraTranslate, vec3(0.0, 0.0, -0.1));
-	}
-	else if (key == 'q') {
-		cameraTranslate = translate(cameraTranslate, vec3(0.0, 0.1, 0.0));
-	}
-	else if (key == 'e') {
-		cameraTranslate = translate(cameraTranslate, vec3(0.0, -0.1, 0.0));
-	}
-	else if (key == 'j') {
-		cameraRotate = rotate_y_deg(cameraRotate, -1.0);
-	}
-	else if (key == 'l') {
-		cameraRotate = rotate_y_deg(cameraRotate, 1.0);
-	}
-	else if (key == 'i') {
-		cameraRotate = rotate_x_deg(cameraRotate, -1.0);
-	}
-	else if (key == 'k') {
-		cameraRotate = rotate_x_deg(cameraRotate, 1.0);
+}
+
+void fireBullet() {
+	int i;
+	for (i = 0; i < maxNumberOfBullets; i++) {
+		if (!ammo[i].active) {
+			ammo[i].active = true;
+		}
 	}
 }
 
 void mouseMove(int x, int y) {
+	/*
 	if (x < prevMouseX) {
 		cameraRotate = rotate_y_deg(cameraRotate, 1.0);
 		prevMouseX = x;
@@ -431,7 +438,6 @@ void mouseMove(int x, int y) {
 		prevMouseX = x;
 	}
 
-	/*
 	if (y < prevMouseY) {
 		cameraRotate = rotate_x_deg(cameraRotate, -1.0);
 		prevMouseY = y;
@@ -444,7 +450,6 @@ void mouseMove(int x, int y) {
 }
 
 int main(int argc, char** argv){
-
 	// Set up the window
 	glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB);
