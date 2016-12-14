@@ -1,9 +1,28 @@
 ﻿  main.cpp
-u:\graphics\lab5 source\newlab5\labproject\main.cpp(38): warning C4305: 'initializing': truncation from 'double' to 'float'
-u:\graphics\lab5 source\newlab5\labproject\main.cpp(304): warning C4305: 'argument': truncation from 'double' to 'float'
-u:\graphics\lab5 source\newlab5\labproject\main.cpp(316): warning C4305: 'argument': truncation from 'double' to 'float'
-u:\graphics\lab5 source\newlab5\labproject\main.cpp(329): warning C4305: 'argument': truncation from 'double' to 'float'
-u:\graphics\lab5 source\newlab5\labproject\main.cpp(330): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-u:\graphics\lab5 source\newlab5\labproject\main.cpp(340): warning C4305: '+=': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\text.h(22): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
+  u:\graphics\lab5 source\newlab5\labproject\text.h(22): note: command-line arguments:  see previous definition of '_CRT_SECURE_NO_WARNINGS'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(120): warning C4305: 'initializing': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(121): warning C4305: 'initializing': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(132): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(132): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(148): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(153): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(169): warning C4305: 'initializing': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(245): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(257): warning C4244: '+=': conversion from 'float' to 'int', possible loss of data
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(258): warning C4305: '+=': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(280): warning C4244: '+=': conversion from 'float' to 'int', possible loss of data
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(303): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(589): warning C4305: 'argument': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(605): warning C4305: 'argument': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(621): warning C4305: 'argument': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(646): warning C4305: 'argument': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(647): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(658): warning C4305: 'argument': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(676): warning C4305: 'argument': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(685): warning C4305: 'argument': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(694): warning C4305: 'argument': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(708): warning C4305: '+=': truncation from 'double' to 'float'
+u:\graphics\lab5 source\newlab5\labproject\main.cpp(820): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
   LabProject.vcxproj -> U:\Graphics\Lab5 Source\newlab5\LabProject\Debug\LabProject.exe
   LabProject.vcxproj -> U:\Graphics\Lab5 Source\newlab5\LabProject\Debug\LabProject.pdb (Partial PDB)

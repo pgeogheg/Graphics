@@ -1,0 +1,69 @@
+#version 330
+
+
+in vec3 position_eye, normal_eye;
+in mat4 view_matrix;
+in vec2 TexCoord;
+in vec3 ourColor;
+in vec4 viewSpace;
+
+// fixed point light properties
+vec3 light_position_world = vec3 (0.0, 5.0, -5.0);
+//vec3 Ls = vec3 (1.0, 1.0, 1.0); // white specular colour
+vec3 Ls = vec3 (1.0, 1.0, 1.0); // white specular colour
+vec3 Ld = vec3 (1.0, 1.0, 1.0); // dull white diffuse light colour
+vec3 La = vec3 (1.0, 1.0, 1.0); // grey ambient colour
+
+// surface reflectance
+vec3 Ks = vec3 (1.0, 1.0, 1.0); // fully reflect specular light
+//vec3 Kd = vec3 (0.0, 0.5, 0.0); // orange diffuse surface reflectance
+vec3 Kd = vec3 (0.0, 0.7, 0.7); // orange diffuse surface reflectance
+vec3 Ka = vec3 (0.0, 1.0, 1.0); // fully reflect ambient light
+float specular_exponent = 100.0; // specular 'power'
+
+vec3 tex1;
+vec3 phongAndTex;
+out vec4 fragment_colour; // final colour of surface
+
+uniform sampler2D ourTexture;
+
+
+//FOG STUFF
+vec3 finalColor = vec3(0, 0, 0);
+const vec3 fogColor = vec3(0.5, 0.5, 0.5);
+const float FogDensity = 0.035;
+
+void main () {
+	// ambient intensity
+	vec3 Ia = La * Ka;
+
+	// diffuse intensity
+	vec3 light_position_eye = vec3 (view_matrix * vec4 (light_position_world, 1.0));
+	vec3 L = normalize (light_position_eye - position_eye);
+	float dot_prod = max(dot (L, normal_eye), 0.0);
+	vec3 Id = Ld * Kd * dot_prod; // final diffuse intensity
+
+	// specular intensity
+	vec3 R = reflect (-L, normal_eye);
+	vec3 V = normalize (-position_eye);
+	float dot_prod_specular = max(dot (R, V), 0.0);
+	float specular_factor = pow (dot_prod_specular, specular_exponent);
+	vec3 Is = Ls * Ks * specular_factor; // final specular intensity
+
+	//fog stuff
+
+	float dist = 0;
+	float fogFactor = 0;
+	dist = length(viewSpace);
+	fogFactor = 1.0/exp(dist * FogDensity);
+	fogFactor = clamp(fogFactor, 0.0, 1.0);
+
+	tex1 = texture(ourTexture, TexCoord).rgb;
+
+	phongAndTex = (Is + Id + Ia) * tex1;
+
+	finalColor = mix(fogColor, phongAndTex, fogFactor);
+
+	fragment_colour = vec4(finalColor, 1);
+
+}

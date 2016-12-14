@@ -21,16 +21,18 @@
   <ItemGroup>
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\maths_funcs.cpp" />
+    <ClCompile Include="..\text.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\maths_funcs.h" />
+    <ClInclude Include="..\stb_image.h" />
+    <ClInclude Include="..\text.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\monkeyhead.dae" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\Shaders\simpleFragmentShader.txt" />
-    <Text Include="..\Shaders\simpleVertexShader.txt" />
+    <Image Include="..\freemono.png" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F20AAD23-6D5D-4CB6-BA34-24FFD1FCF6BF}</ProjectGuid>
@@ -93,7 +95,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>U:\Graphics\Lab5 Source\newlab5\LabProject\Simple OpenGL Image Library\lib;U:\Graphics\Lab5 Source\newlab5\LabProject\assimp\lib\Release;U:\Graphics\Lab5 Source\newlab5\LabProject\glew-1.10.0\lib\Release\Win32;U:\Graphics\Lab5 Source\newlab5\LabProject\freeglut\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libSOIL.a;assimp.lib;freeglut.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SOIL.lib;assimp.lib;freeglut.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

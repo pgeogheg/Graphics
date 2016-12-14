@@ -21,9 +21,18 @@
     <ClCompile Include="..\maths_funcs.cpp">
       <Filter>Resource Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\text.cpp">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\maths_funcs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\text.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\stb_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -31,7 +40,8 @@
     <None Include="..\monkeyhead.dae" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\Shaders\simpleFragmentShader.txt" />
-    <Text Include="..\Shaders\simpleVertexShader.txt" />
+    <Image Include="..\freemono.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

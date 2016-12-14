@@ -1,5 +1,7 @@
 
 //Some Windows Headers (For Time, IO, etc.)
+#include "text.h"
+#include <time.h>
 #include <windows.h>
 #include <mmsystem.h>
 #include <GL/glew.h>
@@ -17,65 +19,60 @@
 #include <math.h>
 #include <vector> // STL dynamic memory.
 
-const int MODEL_COUNT = 4;
+const int MODEL_COUNT = 5;
 int prevMouseX = 0;
 int prevMouseY = 0;
+int playerScore = 0;
+float scoreCombo = 1.0;
+int score_id = 0;
+int timer_id = 0;
+int scoreboard_id = 0;
+int cursor_id = 0;
+float playertime = 50.0;
+float elapsed = 0.0;
+bool playingGame = true;
+bool gameLoseSeen = false;
 
+int scoreBoard[3] = { 0, 0, 0 };
 
-//----------------------
-// INVADER SETTINGS
-//----------------------
-// !! Do NOT change these !!
-float invaderRotate = 0.0;
-float invaderHeight = 0.0;
-float invaderDropCount = 0.0;
+void enterIntoScoreboard (int score) {
+	int i;
+	for (i = 2; i >= 0; i--) {
+		if (score > scoreBoard[i]) {
+			if (i == 2) {
+				scoreBoard[i] = score;
+			}
+			else {
+				scoreBoard[i + 1] = scoreBoard[i];
+				scoreBoard[i] = score;
+			}
+		}
+		else {
+			break;
+		}
+	}
+}
 
-// You can change these
-int invaderRow = 3;
-int invaderColumn = 9;
-int invaders[3][9] = {
-	{ 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-	{ 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-	{ 1, 1, 1, 1, 1, 1, 1, 1, 1 }
-};
-float invaderStartHeight = 10.0;
-float invaderSpeed = 0.05;
-float invaderDropFreq = 360; // degrees traveled in cicle before dropping
-int invaderCount = 10;
-int invaderTimer = 0;
+float miniRotation = 0.0;
 
-//----------------------
-// BULLET SETTINGS
-//----------------------
-class Bullet {
-public:
-	float xPos = 0.0;  
-	float yPos = 0.0;
-	bool active = false;
-};
-
-int maxNumberOfBullets = 1;
-Bullet b1;
-Bullet ammo[1] = {
-	b1
-};
-
+const char* atlas_image = "../freemono.png";
+const char* atlas_meta = "../freemono.meta";
 
 /*----------------------------------------------------------------------------
-                   MESH TO LOAD
-  ----------------------------------------------------------------------------*/
+MESH TO LOAD
+----------------------------------------------------------------------------*/
 // this mesh is a dae file format but you should be able to use any other format too, obj is typically what is used
 // put the mesh in your project directory, or provide a filepath for it here
-char* MESH_NAMES[] = { "../PlayerShip.obj", "../invader.obj", "../arena.obj", "../bullet.obj" };
+char* MESH_NAMES[] = { "../playership.obj", "../invader.obj", "../arena.obj", "../bullet.obj", "../mothership.obj" };
 /*----------------------------------------------------------------------------
-  ----------------------------------------------------------------------------*/
+----------------------------------------------------------------------------*/
 
 std::vector<float>* g_vp = new std::vector<float>[MODEL_COUNT];
 std::vector<float>* g_vn = new std::vector<float>[MODEL_COUNT];
 std::vector<float>* g_vt = new std::vector<float>[MODEL_COUNT];
 
-int g_point_count[MODEL_COUNT] = {0, 0, 0, 0};
-GLuint vaos[MODEL_COUNT] = {0, 0, 0, 0};
+int g_point_count[MODEL_COUNT] = { 0, 0, 0, 0, 0 };
+GLuint vaos[MODEL_COUNT] = { 0, 0, 0, 0, 0 };
 
 // Macro for indexing vertex buffer
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
@@ -91,10 +88,278 @@ int height = 600;
 GLuint loc1, loc2, loc3;
 GLfloat rotate_y = 0.0f;
 
-mat4 cameraTranslate = translate(identity_mat4(),vec3(0.0, 0.0, 0.0));
-mat4 cameraRotate    = rotate_x_deg(identity_mat4(), -30);
+mat4 cameraTranslate = translate(identity_mat4(), vec3(0.0, 0.0, 0.0));
+mat4 cameraRotate = rotate_x_deg(identity_mat4(), -30);
 float cameraAlign = 0.0;
 
+//----------------------
+// INVADER SETTINGS
+//----------------------
+// !! Do NOT change these !!
+class Invader {
+public:
+	float xPos = 0.0;
+	float yPos = 0.0;
+	bool active = true;
+	int direction = 1;
+};
+
+Invader newInv(float x, float y) {
+	Invader i;
+	i.xPos = x;
+	i.yPos = y;
+	i.active = true;
+	i.direction = 1;
+	return i;
+}
+
+// You can change these
+float invaderStartHeight = 4.5;
+int invaderRow = 3;
+int invaderColumn = 9;
+float invaderSpeed = 0.02;
+float invaderAcc = 0.005;
+int invaderCount = 10;
+int invaderTimer = 0;
+
+Invader invaders[3][9];
+
+void initInvaders() {
+	int i, j;
+	for (i = 0; i < invaderRow; i++) {
+		for (j = 0; j < invaderColumn; j++) {
+			int gap = (i % 2) * 20;
+			invaders[i][j] = newInv(10 + (40 * j) + gap, (invaderStartHeight - (0.5 * i)));
+		}
+	}
+}
+
+void invadersMove() {
+	int i, j;
+	for (i = 0; i < invaderRow; i++) {
+		for (j = 0; j < invaderColumn; j++) {
+			Invader in = invaders[i][j];
+			Invader newI;
+			newI.active = in.active;
+			newI.direction = in.direction;
+			newI.xPos = in.xPos;
+			newI.yPos = in.yPos;
+			if (in.xPos >= 350) {
+				newI.yPos = in.yPos - 0.2;
+				newI.direction = in.direction = -1;
+				PlaySound("../fastinvader1.wav", NULL, SND_ASYNC | SND_FILENAME);
+			}
+			if (in.xPos <= 5.0) {
+				newI.yPos = in.yPos - 0.2;
+				newI.direction = in.direction = 1;
+				PlaySound("../fastinvader1.wav", NULL, SND_ASYNC | SND_FILENAME);
+			}
+			newI.xPos = in.xPos + (in.direction * invaderSpeed);
+			invaders[i][j] = newI;
+		}
+	}
+}
+
+//----------------------
+// MOTHERSHIP SETTINGS
+//----------------------
+bool mothershipActive = false;
+float mothershipX = 0.0;
+float mothershipY = 5.5;
+float mothershipSpeed = 0.03;
+mat4 mthModel = identity_mat4();
+
+void spawnMothership() {
+	if (!mothershipActive) {
+		int chance = rand() % 10000;
+		if (chance < 1) {
+			PlaySound("../ufo_lowpitch.wav", NULL, SND_ASYNC | SND_FILENAME);
+			mothershipActive = true;
+			mothershipX = 350.0;
+		}
+	}
+}
+
+//----------------------
+// BULLET SETTINGS
+//----------------------
+class Bullet {
+public:
+	float xPos = 0.0;  
+	float yPos = 0.0;
+	bool active = false;
+	mat4 bModel = identity_mat4();
+};
+
+int maxNumberOfBullets = 1;
+Bullet b1;
+Bullet ammo[1] = {
+	b1
+};
+
+//----------------------
+// TEXTURE SETTINGS
+//----------------------
+GLuint tex;
+GLuint textures_buffer[MODEL_COUNT];
+char* TEX_NAMES[] = { "../playerShipT.png", "../invaderT.png", "../arenaT.jpg", "../img_test.bmp", "../mothershipT.jpg" };
+
+void loadTextures() {
+	int width, height;
+	int i;
+	for (i = 0; i < MODEL_COUNT; i++) {
+		glGenTextures(1, &textures_buffer[i]);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textures_buffer[i]);
+		glUniform1i(glGetUniformLocation(shaderProgramID, "ourTexture"), 0);
+		unsigned char* image = SOIL_load_image(TEX_NAMES[i], &width, &height, 0, SOIL_LOAD_RGB);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+		SOIL_free_image_data(image);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		printf("Loaded texture: %s Width: %i Height %i\n", TEX_NAMES[i], width, height);
+	}
+}
+
+void fireBullet() {
+	int i;
+	for (i = 0; i < maxNumberOfBullets; i++) {
+		if (!ammo[i].active) {
+			ammo[i].active = true;
+			ammo[i].xPos = cameraAlign;
+			ammo[i].yPos = 0;
+			PlaySound("../shoot.wav", NULL, SND_ASYNC | SND_FILENAME);
+			return;
+		}
+	}
+}
+
+bool hitDetection(Bullet b) {
+	int i, j;
+	for (i = 0; i < invaderRow; i++) {
+		for (j = 0; j < invaderColumn; j++) {
+			float invaderY = invaders[i][j].yPos - 1.7;
+			float invaderX = invaders[i][j].xPos;
+			if (invaders[i][j].active &&
+				invaderX < b.xPos + 4.0 &&
+				invaderX > b.xPos - 4.0 &&
+				invaderY < b.yPos + 0.5 &&
+				invaderY > b.yPos - 0.5) {
+				cout << "COLLISION! Hit alien i: " << i << " j: " << j << "\n";
+				invaders[i][j].active = false;
+				b.active = false;
+				b.xPos = 0;
+				b.yPos = 0;
+				playerScore += (100 * scoreCombo);
+				scoreCombo += 0.1;
+				invaderSpeed += invaderAcc;
+				PlaySound("../invaderkilled.wav", NULL, SND_ASYNC | SND_FILENAME );
+				return true;
+			}
+		}
+	}
+	//Sleep(10);
+	return false;
+}
+
+bool mothershipHitDetect(Bullet b) {
+	if (mothershipActive &&
+		mothershipX < b.xPos + 10.0 &&
+		mothershipX > b.xPos - 10.0 &&
+		mothershipY < b.yPos + 2.5 &&
+		mothershipY > b.yPos - 2.5) {
+		cout << "MOTHERSHIP HIT!\n";
+		mothershipActive = false;
+		b.active = false;
+		b.xPos = 0;
+		b.yPos = 0;
+		playerScore += (1000 * scoreCombo);
+		scoreCombo += 0.5;
+		PlaySound("../invaderkilled.wav", NULL, SND_ASYNC | SND_FILENAME);
+		return true;
+	}
+	return false;
+}
+
+Bullet bulletLogic(Bullet b) {
+	Bullet newBull;
+	if (b.yPos > 5) {
+		newBull.active = false;
+		newBull.xPos = 0;
+		newBull.yPos = 0;
+		scoreCombo = 1.0;
+	} 
+	else if (hitDetection(b) || mothershipHitDetect(b)) {
+		newBull.active = false;
+		newBull.xPos = 0;
+		newBull.yPos = 0;
+	}
+	else {
+		newBull.xPos = b.xPos;
+		newBull.yPos = b.yPos + 0.01;
+		newBull.active = true;
+	}
+	return newBull;
+}
+
+void gameLose() {
+	if (!gameLoseSeen) {
+		PlaySound("../explosion.wav", NULL, SND_ASYNC | SND_FILENAME);
+		cout << "Game Over!\n";
+		playingGame = false;
+		enterIntoScoreboard(playerScore);
+		char newTxt[256];
+		sprintf(newTxt, "");
+		update_text(score_id, newTxt);
+		update_text(timer_id, newTxt);
+		update_text(cursor_id, newTxt);
+
+		sprintf(newTxt, "1. %i\n2. %i\n3. %i\n", scoreBoard[0], scoreBoard[1], scoreBoard[2]);
+		update_text(scoreboard_id, newTxt);
+		draw_texts();
+		gameLoseSeen = true;
+	}
+	
+}
+
+void winLoseCheck() {
+	int i, j;
+	for (i = 0; i < invaderRow; i++) {
+		for (j = 0; j < invaderColumn; j++) {
+			float invaderY = invaders[i][j].yPos;
+			if (invaders[i][j].active && invaders[i][j].yPos < 0) {
+				gameLose();
+			}
+		}
+	}
+}
+
+void loadFont() {
+	if (!init_text_rendering(atlas_image, atlas_meta, width, height)) {
+		fprintf(stderr, "ERROR init text rendering\n");
+		exit(1);
+	}
+
+	score_id = add_text(
+		"Score: 0 (x1.0)",
+		-0.9f, -0.7f, 35.0f, 0.5f, 0.5f, 1.0f, 1.0f);
+
+	timer_id = add_text(
+		"120",
+		0.5f, -0.7f, 35.0f, 0.5f, 0.5f, 1.0f, 1.0f);
+
+	scoreboard_id = add_text(
+		"",
+		0.0f, 0.0f, 35.0f, 0.5f, 0.5f, 1.0f, 1.0f);
+
+	cursor_id = add_text(
+		"| |",
+		-0.033f, 0.0f, 35.0f, 0.5f, 0.5f, 1.0f, 1.0f);
+}
 
 #pragma region MESH LOADING
 /*----------------------------------------------------------------------------
@@ -136,7 +401,7 @@ bool load_mesh (const char* file_name, int count) {
       }
       if (mesh->HasTextureCoords (0)) {
         const aiVector3D* vt = &(mesh->mTextureCoords[0][v_i]);
-        //printf ("      vt %i (%f,%f)\n", v_i, vt->x, vt->y);
+        printf ("      vt %i (%f,%f)\n", v_i, vt->x, vt->y);
         g_vt[count].push_back (vt->x);
         g_vt[count].push_back (vt->y);
       }
@@ -217,7 +482,7 @@ GLuint CompileShaders()
 
 	// Create two shader objects, one for the vertex, and one for the fragment shader
     AddShader(shaderProgramID, "../Shaders/simpleVertexShader.txt", GL_VERTEX_SHADER);
-    AddShader(shaderProgramID, "../Shaders/simpleFragmentShader.txt", GL_FRAGMENT_SHADER);
+    AddShader(shaderProgramID, "../Shaders/fShader.txt", GL_FRAGMENT_SHADER);
 
     GLint Success = 0;
     GLchar ErrorLog[1024] = { 0 };
@@ -276,10 +541,10 @@ void generateObjectBufferMesh() {
 		glBufferData(GL_ARRAY_BUFFER, g_point_count[i] * 3 * sizeof(float), &g_vn[i][0], GL_STATIC_DRAW);
 
 		//	This is for texture coordinates which you don't currently need, so I have commented it out
-		//	unsigned int vt_vbo = 0;
-		//	glGenBuffers (1, &vt_vbo);
-		//	glBindBuffer (GL_ARRAY_BUFFER, vt_vbo);
-		//	glBufferData (GL_ARRAY_BUFFER, g_point_count * 2 * sizeof (float), &g_vt[0], GL_STATIC_DRAW);
+		unsigned int vt_vbo = 0;
+		glGenBuffers (1, &vt_vbo);
+		glBindBuffer (GL_ARRAY_BUFFER, vt_vbo);
+		glBufferData (GL_ARRAY_BUFFER, g_point_count[i] * 2 * sizeof (float), &g_vt[i][0], GL_STATIC_DRAW);
 
 		glGenVertexArrays(1, &(vaos[i]));
 		glBindVertexArray(vaos[i]);
@@ -292,9 +557,9 @@ void generateObjectBufferMesh() {
 		glVertexAttribPointer(loc2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
 		//	This is for texture coordinates which you don't currently need, so I have commented it out
-		//	glEnableVertexAttribArray (loc3);
-		//	glBindBuffer (GL_ARRAY_BUFFER, vt_vbo);
-		//	glVertexAttribPointer (loc3, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+		glEnableVertexAttribArray (loc3);
+		glBindBuffer (GL_ARRAY_BUFFER, vt_vbo);
+		glVertexAttribPointer (loc3, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 		printf("g_point: %i , %i \n", i, g_point_count[i]);
 	}
 	
@@ -330,6 +595,10 @@ void display(){
 	glUniformMatrix4fv (matrix_location, 1, GL_FALSE, model.m);
 
 	// Draw SHIP
+	glEnable(GL_TEXTURE_2D);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textures_buffer[0]);
 	glBindVertexArray(vaos[0]);
 	model = rotate_y_deg(model, -90);
 	model = rotate_x_deg(model, 30);
@@ -340,33 +609,115 @@ void display(){
 	glDrawArrays(GL_TRIANGLES, 0, g_point_count[0]);
 	
 	// Draw INVADERS
+	glBindTexture(GL_TEXTURE_2D, textures_buffer[1]);
+	if (playingGame) invadersMove();
 	glBindVertexArray(vaos[1]);
 	int i, j;
 	for (i = 0; i < invaderRow; i++) {
 		for (j = 0; j < invaderColumn; j++) {
-			mat4 v_model = identity_mat4();
-			v_model = rotate_x_deg(v_model, 120);
-			v_model = scale(v_model, vec3(0.05, 0.05, 0.05));
-			v_model = translate(v_model, vec3(0.0, (5 - (0.5 * i) - invaderHeight), -5.0));
-			v_model = rotate_y_deg(v_model, invaderRotate + (10 * j));
-			glUniformMatrix4fv(matrix_location, 1, GL_FALSE, v_model.m);
-			glDrawArrays(GL_TRIANGLES, 0, g_point_count[1]);
+			if (invaders[i][j].active) {
+				mat4 v_model = identity_mat4();
+				v_model = rotate_x_deg(v_model, 120);
+				v_model = scale(v_model, vec3(0.05, 0.05, 0.05));
+				v_model = translate(v_model, vec3(0.0, invaders[i][j].yPos, -5.0));
+				v_model = rotate_y_deg(v_model, invaders[i][j].xPos);
+				glUniformMatrix4fv(matrix_location, 1, GL_FALSE, v_model.m);
+				glDrawArrays(GL_TRIANGLES, 0, g_point_count[1]);
+			}
 		}
-	}
-
-	invaderRotate += invaderSpeed;
-	invaderDropCount += invaderSpeed;
-	if (invaderDropFreq <= invaderDropCount) {
-		invaderHeight += 0.2;
-		invaderDropCount = 0;
 	}
 
 
 	// Draw ARENA
+	glBindTexture(GL_TEXTURE_2D, textures_buffer[2]);
 	glBindVertexArray(vaos[2]);
 	model = translate(identity_mat4(), vec3(0.0, -0.5, 0.0));
 	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model.m);
 	glDrawArrays(GL_TRIANGLES, 0, g_point_count[2]);
+
+	// Draw BULLETS
+	glBindTexture(GL_TEXTURE_2D, textures_buffer[3]);
+	glBindVertexArray(vaos[3]);
+	
+	for (i = 0; i < maxNumberOfBullets && ammo[i].active; i++) {
+		ammo[i] = bulletLogic(ammo[i]);
+		//cout << "Bullet x: " << ammo[i].xPos << "\n";
+		mat4 bModel = ammo[i].bModel;
+		bModel = scale(bModel, vec3(0.2, 0.2, 0.2));
+		bModel = translate(bModel, vec3(0.0, 2.0 + (ammo[i].yPos), -5.0));
+		bModel = rotate_y_deg(bModel, ammo[i].xPos);
+		glUniformMatrix4fv(matrix_location, 1, GL_FALSE, bModel.m);
+		glDrawArrays(GL_TRIANGLES, 0, g_point_count[3]);
+	}
+
+	// Draw MOTHERSHIP
+	glBindTexture(GL_TEXTURE_2D, textures_buffer[4]);
+	if (playingGame) spawnMothership();
+	glBindVertexArray(vaos[4]);
+	if (mothershipActive) {
+		mthModel = scale(identity_mat4(), vec3(0.1, 0.1, 0.1));
+		mthModel = rotate_x_deg(mthModel, 90);
+		mthModel = translate(mthModel, vec3(0.0, mothershipY, -5.0));
+		mthModel = rotate_y_deg(mthModel, mothershipX);
+
+		if (playingGame) mothershipX -= mothershipSpeed;
+		if (mothershipX < 10) {
+			mothershipActive = false;
+		}
+
+
+		glUniformMatrix4fv(matrix_location, 1, GL_FALSE, mthModel.m);
+		glDrawArrays(GL_TRIANGLES, 0, g_point_count[4]);
+
+		if (playingGame) miniRotation += 0.5;
+
+		glBindVertexArray(vaos[1]);
+		mat4 miniModel1 = identity_mat4();
+		miniModel1 = scale(miniModel1, vec3(0.2, 0.2, 0.2));
+		miniModel1 = translate(miniModel1, vec3(12.0, 0.0, 0.0));
+		miniModel1 = rotate_y_deg(miniModel1, miniRotation);
+		miniModel1 = mthModel * miniModel1;
+
+		glUniformMatrix4fv(matrix_location, 1, GL_FALSE, miniModel1.m);
+		glDrawArrays(GL_TRIANGLES, 0, g_point_count[1]);
+
+		mat4 miniModel2 = identity_mat4();
+		miniModel2 = scale(miniModel2, vec3(0.2, 0.2, 0.2));
+		miniModel2 = translate(miniModel2, vec3(12.0, 0.0, 0.0));
+		miniModel2 = rotate_y_deg(miniModel2, miniRotation + 120);
+		miniModel2 = mthModel * miniModel2;
+
+		glUniformMatrix4fv(matrix_location, 1, GL_FALSE, miniModel2.m);
+		glDrawArrays(GL_TRIANGLES, 0, g_point_count[1]);
+
+		mat4 miniModel3 = identity_mat4();
+		miniModel3 = scale(miniModel3, vec3(0.2, 0.2, 0.2));
+		miniModel3 = translate(miniModel3, vec3(12.0, 0.0, 0.0));
+		miniModel3 = rotate_y_deg(miniModel3, miniRotation + 240);
+		miniModel3 = mthModel * miniModel3;
+
+		glUniformMatrix4fv(matrix_location, 1, GL_FALSE, miniModel3.m);
+		glDrawArrays(GL_TRIANGLES, 0, g_point_count[1]);
+	}
+	
+	// Draw TEXT
+	char newTxt[256];
+	sprintf(newTxt, "Score: %d (x%.2f)\n", playerScore, scoreCombo);
+	update_text(score_id, newTxt);
+
+	if (playingGame) elapsed += 1.0 / 60.0;
+	sprintf(newTxt, "%.2f\n", playertime - elapsed);
+	update_text(timer_id, newTxt);
+
+	draw_texts();
+
+	if ((playertime - elapsed) <= 0) {
+		elapsed = playertime;
+		gameLose();
+	}
+
+	// Draw SKYBOX
+
 
     glutSwapBuffers();
 }
@@ -392,38 +743,54 @@ void updateScene() {
 
 void init()
 {
+	initInvaders();
 	// Set up the shaders
 	GLuint shaderProgramID = CompileShaders();
 	// load mesh into a vertex buffer array
 	generateObjectBufferMesh();
 	
+	
 }
 
 // Placeholder code for the keypress
 void keypress(unsigned char key, int x, int y) {
-	if(key=='d'){
+	if(key=='d' && playingGame){
 		cameraRotate = rotate_x_deg(cameraRotate, 30);
 		cameraRotate = rotate_y_deg(cameraRotate, 1.0);
 		cameraRotate = rotate_x_deg(cameraRotate, -30);
 		cameraAlign -= 1.0;
+		if (cameraAlign == -1) {
+			cameraAlign = 359.0;
+		}
 	}
-	else if (key == 'a') {
+	else if (key == 'a' && playingGame) {
 		cameraRotate = rotate_x_deg(cameraRotate, 30);
 		cameraRotate = rotate_y_deg(cameraRotate, -1.0);
 		cameraRotate = rotate_x_deg(cameraRotate, -30);
 		cameraAlign += 1.0;
-	}
-	else if (key == 'w') {
-		// SHOOT
-	}
-}
-
-void fireBullet() {
-	int i;
-	for (i = 0; i < maxNumberOfBullets; i++) {
-		if (!ammo[i].active) {
-			ammo[i].active = true;
+		if (cameraAlign == 360.0) {
+			cameraAlign = 0.0;
 		}
+	}
+	else if (key == 'w' && playingGame) {
+		cout << "FIRE at: ";
+		fireBullet();
+	}
+	else if (key == 'r') {
+		cout << "RESTART";
+		playerScore = 0;
+		scoreCombo = 1.0;
+		elapsed = 0.0;
+		playingGame = true;
+		initInvaders();
+		mothershipActive = false;
+		char newTxt[256];
+		sprintf(newTxt, "");
+		update_text(scoreboard_id, newTxt);
+		sprintf(newTxt, "| |");
+		update_text(cursor_id, newTxt);
+		gameLoseSeen = false;
+		Sleep(1000);
 	}
 }
 
@@ -450,6 +817,8 @@ void mouseMove(int x, int y) {
 }
 
 int main(int argc, char** argv){
+	srand(time(NULL));
+
 	// Set up the window
 	glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB);
@@ -462,7 +831,7 @@ int main(int argc, char** argv){
 	glutKeyboardFunc(keypress);
 	glutPassiveMotionFunc(mouseMove);
 
-	 // A call to glewInit() must be done after glut is initialized!
+	// A call to glewInit() must be done after glut is initialized!
     GLenum res = glewInit();
 	// Check for any errors
     if (res != GLEW_OK) {
@@ -471,6 +840,8 @@ int main(int argc, char** argv){
     }
 	// Set up your objects and shaders
 	init();
+	loadFont();
+	loadTextures();
 	// Begin infinite event loop
 	glutMainLoop();
     return 0;
