@@ -19,44 +19,32 @@
 #include <math.h>
 #include <vector> // STL dynamic memory.
 
-const int MODEL_COUNT = 5;
-int prevMouseX = 0;
-int prevMouseY = 0;
+const int MODEL_COUNT = 5; // Number of models and textures
+
+//----------------------
+// INITIALISATION SETTINGS
+//----------------------
+// These are the variables that will get reset at the start of a new game
+// Player score variables
 int playerScore = 0;
 float scoreCombo = 1.0;
+
+// On screen text element ids
 int score_id = 0;
 int timer_id = 0;
 int scoreboard_id = 0;
 int cursor_id = 0;
-float playertime = 50.0;
-float elapsed = 0.0;
-bool playingGame = true;
-bool gameLoseSeen = false;
-
-int scoreBoard[3] = { 0, 0, 0 };
-
-void enterIntoScoreboard (int score) {
-	int i;
-	for (i = 2; i >= 0; i--) {
-		if (score > scoreBoard[i]) {
-			if (i == 2) {
-				scoreBoard[i] = score;
-			}
-			else {
-				scoreBoard[i + 1] = scoreBoard[i];
-				scoreBoard[i] = score;
-			}
-		}
-		else {
-			break;
-		}
-	}
-}
-
-float miniRotation = 0.0;
-
+// Text textures
 const char* atlas_image = "../freemono.png";
 const char* atlas_meta = "../freemono.meta";
+
+// Game timer
+float playertime = 500.0;
+float elapsed = 0.0;
+
+// Run game booleans
+bool playingGame = true;
+bool gameEndSeen = false;
 
 /*----------------------------------------------------------------------------
 MESH TO LOAD
@@ -86,11 +74,13 @@ int width = 800;
 int height = 600;
 
 GLuint loc1, loc2, loc3;
-GLfloat rotate_y = 0.0f;
 
 mat4 cameraTranslate = translate(identity_mat4(), vec3(0.0, 0.0, 0.0));
 mat4 cameraRotate = rotate_x_deg(identity_mat4(), -30);
-float cameraAlign = 0.0;
+float cameraAlign = 0.0; // Allows for alignment of player, bullet, enemies, and collision detection
+
+float miniRotation = 0.0; // Rotation of the mini-invaders that cicle the mothership
+float arenaRotation = 0.0; // Rotation of arena
 
 //----------------------
 // INVADER SETTINGS
@@ -117,12 +107,16 @@ Invader newInv(float x, float y) {
 float invaderStartHeight = 4.5;
 int invaderRow = 3;
 int invaderColumn = 9;
-float invaderSpeed = 0.02;
-float invaderAcc = 0.005;
+float invaderSpeed = 0.2;
+float invaderAcc = 0.05;
 int invaderCount = 10;
 int invaderTimer = 0;
 
 Invader invaders[3][9];
+
+//----------------------
+// INVADER FUNCTIONS
+//----------------------
 
 void initInvaders() {
 	int i, j;
@@ -138,35 +132,37 @@ void invadersMove() {
 	int i, j;
 	for (i = 0; i < invaderRow; i++) {
 		for (j = 0; j < invaderColumn; j++) {
-			Invader in = invaders[i][j];
-			Invader newI;
-			newI.active = in.active;
-			newI.direction = in.direction;
-			newI.xPos = in.xPos;
-			newI.yPos = in.yPos;
-			if (in.xPos >= 350) {
-				newI.yPos = in.yPos - 0.2;
-				newI.direction = in.direction = -1;
-				PlaySound("../fastinvader1.wav", NULL, SND_ASYNC | SND_FILENAME);
+			if (invaders[i][j].active) {
+				Invader in = invaders[i][j];
+				Invader newI;
+				newI.active = in.active;
+				newI.direction = in.direction;
+				newI.xPos = in.xPos;
+				newI.yPos = in.yPos;
+				if (in.xPos >= 350) {
+					newI.yPos = in.yPos - 2;
+					newI.direction = in.direction = -1;
+					PlaySound("../fastinvader1.wav", NULL, SND_ASYNC | SND_FILENAME);
+				}
+				if (in.xPos <= 5.0) {
+					newI.yPos = in.yPos - 2;
+					newI.direction = in.direction = 1;
+					PlaySound("../fastinvader1.wav", NULL, SND_ASYNC | SND_FILENAME);
+				}
+				newI.xPos = in.xPos + (in.direction * invaderSpeed);
+				invaders[i][j] = newI;
 			}
-			if (in.xPos <= 5.0) {
-				newI.yPos = in.yPos - 0.2;
-				newI.direction = in.direction = 1;
-				PlaySound("../fastinvader1.wav", NULL, SND_ASYNC | SND_FILENAME);
-			}
-			newI.xPos = in.xPos + (in.direction * invaderSpeed);
-			invaders[i][j] = newI;
 		}
 	}
 }
 
-//----------------------
-// MOTHERSHIP SETTINGS
-//----------------------
+//--------------------------------
+// MOTHERSHIP SETTINGS & FUNCTIONS
+//--------------------------------
 bool mothershipActive = false;
 float mothershipX = 0.0;
 float mothershipY = 5.5;
-float mothershipSpeed = 0.03;
+float mothershipSpeed = 0.3;
 mat4 mthModel = identity_mat4();
 
 void spawnMothership() {
@@ -185,7 +181,7 @@ void spawnMothership() {
 //----------------------
 class Bullet {
 public:
-	float xPos = 0.0;  
+	float xPos = 0.0;
 	float yPos = 0.0;
 	bool active = false;
 	mat4 bModel = identity_mat4();
@@ -198,8 +194,86 @@ Bullet ammo[1] = {
 };
 
 //----------------------
-// TEXTURE SETTINGS
+// BULLET FUNCTIONS
 //----------------------
+
+void fireBullet() {
+	int i;
+	for (i = 0; i < maxNumberOfBullets; i++) {
+		if (!ammo[i].active) {
+			ammo[i].active = true;
+			ammo[i].xPos = cameraAlign;
+			ammo[i].yPos = -1.0;
+			PlaySound("../shoot.wav", NULL, SND_ASYNC | SND_FILENAME);
+			return;
+		}
+	}
+}
+
+bool hitDetection(Bullet b) {
+	int i, j;
+	for (i = 0; i < invaderRow; i++) {
+		for (j = 0; j < invaderColumn; j++) {
+			float invaderY = invaders[i][j].yPos - 1.7;
+			float invaderX = invaders[i][j].xPos;
+			if (invaders[i][j].active &&
+				invaderX < b.xPos + 4.0 &&
+				invaderX > b.xPos - 4.0 &&
+				invaderY < b.yPos + 0.4 &&
+				invaderY > b.yPos - 0.4) {
+				cout << "COLLISION! Hit alien i: " << i << " j: " << j << "\n";
+				invaders[i][j].active = false;
+				playerScore += (100 * scoreCombo);
+				scoreCombo += 0.1;
+				invaderSpeed += invaderAcc;
+				PlaySound("../invaderkilled.wav", NULL, SND_ASYNC | SND_FILENAME);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+bool mothershipHitDetect(Bullet b) {
+	if (mothershipActive &&
+		mothershipX < b.xPos + 10.0 &&
+		mothershipX > b.xPos - 10.0 &&
+		mothershipY < b.yPos + 2.5 &&
+		mothershipY > b.yPos - 2.5) {
+		cout << "MOTHERSHIP HIT!\n";
+		mothershipActive = false;
+		playerScore += (1000 * scoreCombo);
+		scoreCombo += 0.5;
+		PlaySound("../invaderkilled.wav", NULL, SND_ASYNC | SND_FILENAME);
+		return true;
+	}
+	return false;
+}
+
+Bullet bulletLogic(Bullet b) {
+	Bullet newBull;
+	if (b.yPos > 5) {
+		newBull.active = false;
+		newBull.xPos = 0;
+		newBull.yPos = 100;
+		scoreCombo = 1.0;
+	}
+	else if (hitDetection(b) || mothershipHitDetect(b)) {
+		newBull.active = false;
+		newBull.xPos = 0;
+		newBull.yPos = 100;
+	}
+	else {
+		newBull.xPos = b.xPos;
+		newBull.yPos = b.yPos + 0.1;
+		newBull.active = true;
+	}
+	return newBull;
+}
+
+//------------------------
+// TEXTURE & TEXT SETTINGS
+//------------------------
 GLuint tex;
 GLuint textures_buffer[MODEL_COUNT];
 char* TEX_NAMES[] = { "../playerShipT.png", "../invaderT.png", "../arenaT.jpg", "../img_test.bmp", "../mothershipT.jpg" };
@@ -225,119 +299,6 @@ void loadTextures() {
 	}
 }
 
-void fireBullet() {
-	int i;
-	for (i = 0; i < maxNumberOfBullets; i++) {
-		if (!ammo[i].active) {
-			ammo[i].active = true;
-			ammo[i].xPos = cameraAlign;
-			ammo[i].yPos = 0;
-			PlaySound("../shoot.wav", NULL, SND_ASYNC | SND_FILENAME);
-			return;
-		}
-	}
-}
-
-bool hitDetection(Bullet b) {
-	int i, j;
-	for (i = 0; i < invaderRow; i++) {
-		for (j = 0; j < invaderColumn; j++) {
-			float invaderY = invaders[i][j].yPos - 1.7;
-			float invaderX = invaders[i][j].xPos;
-			if (invaders[i][j].active &&
-				invaderX < b.xPos + 4.0 &&
-				invaderX > b.xPos - 4.0 &&
-				invaderY < b.yPos + 0.5 &&
-				invaderY > b.yPos - 0.5) {
-				cout << "COLLISION! Hit alien i: " << i << " j: " << j << "\n";
-				invaders[i][j].active = false;
-				b.active = false;
-				b.xPos = 0;
-				b.yPos = 0;
-				playerScore += (100 * scoreCombo);
-				scoreCombo += 0.1;
-				invaderSpeed += invaderAcc;
-				PlaySound("../invaderkilled.wav", NULL, SND_ASYNC | SND_FILENAME );
-				return true;
-			}
-		}
-	}
-	//Sleep(10);
-	return false;
-}
-
-bool mothershipHitDetect(Bullet b) {
-	if (mothershipActive &&
-		mothershipX < b.xPos + 10.0 &&
-		mothershipX > b.xPos - 10.0 &&
-		mothershipY < b.yPos + 2.5 &&
-		mothershipY > b.yPos - 2.5) {
-		cout << "MOTHERSHIP HIT!\n";
-		mothershipActive = false;
-		b.active = false;
-		b.xPos = 0;
-		b.yPos = 0;
-		playerScore += (1000 * scoreCombo);
-		scoreCombo += 0.5;
-		PlaySound("../invaderkilled.wav", NULL, SND_ASYNC | SND_FILENAME);
-		return true;
-	}
-	return false;
-}
-
-Bullet bulletLogic(Bullet b) {
-	Bullet newBull;
-	if (b.yPos > 5) {
-		newBull.active = false;
-		newBull.xPos = 0;
-		newBull.yPos = 0;
-		scoreCombo = 1.0;
-	} 
-	else if (hitDetection(b) || mothershipHitDetect(b)) {
-		newBull.active = false;
-		newBull.xPos = 0;
-		newBull.yPos = 0;
-	}
-	else {
-		newBull.xPos = b.xPos;
-		newBull.yPos = b.yPos + 0.01;
-		newBull.active = true;
-	}
-	return newBull;
-}
-
-void gameLose() {
-	if (!gameLoseSeen) {
-		PlaySound("../explosion.wav", NULL, SND_ASYNC | SND_FILENAME);
-		cout << "Game Over!\n";
-		playingGame = false;
-		enterIntoScoreboard(playerScore);
-		char newTxt[256];
-		sprintf(newTxt, "");
-		update_text(score_id, newTxt);
-		update_text(timer_id, newTxt);
-		update_text(cursor_id, newTxt);
-
-		sprintf(newTxt, "1. %i\n2. %i\n3. %i\n", scoreBoard[0], scoreBoard[1], scoreBoard[2]);
-		update_text(scoreboard_id, newTxt);
-		draw_texts();
-		gameLoseSeen = true;
-	}
-	
-}
-
-void winLoseCheck() {
-	int i, j;
-	for (i = 0; i < invaderRow; i++) {
-		for (j = 0; j < invaderColumn; j++) {
-			float invaderY = invaders[i][j].yPos;
-			if (invaders[i][j].active && invaders[i][j].yPos < 0) {
-				gameLose();
-			}
-		}
-	}
-}
-
 void loadFont() {
 	if (!init_text_rendering(atlas_image, atlas_meta, width, height)) {
 		fprintf(stderr, "ERROR init text rendering\n");
@@ -354,65 +315,157 @@ void loadFont() {
 
 	scoreboard_id = add_text(
 		"",
-		0.0f, 0.0f, 35.0f, 0.5f, 0.5f, 1.0f, 1.0f);
+		-0.15f, 0.3f, 35.0f, 0.5f, 0.5f, 1.0f, 1.0f);
 
 	cursor_id = add_text(
 		"| |",
 		-0.033f, 0.0f, 35.0f, 0.5f, 0.5f, 1.0f, 1.0f);
 }
 
+//----------------------
+// SCOREBOARD FUNCTIONS
+//----------------------
+int scoreBoard[3] = { 0, 0, 0 };
+
+void enterIntoScoreboard(int score) {
+	int i;
+	for (i = 2; i >= 0; i--) {
+		if (score > scoreBoard[i]) {
+			if (i == 2) {
+				scoreBoard[i] = score;
+			}
+			else {
+				scoreBoard[i + 1] = scoreBoard[i];
+				scoreBoard[i] = score;
+			}
+		}
+		else {
+			break;
+		}
+	}
+}
+
+
+//----------------------
+// GAME END & RESTART 
+//----------------------
+void gameEnd() {
+	if (!gameEndSeen) {
+		PlaySound("../explosion.wav", NULL, SND_ASYNC | SND_FILENAME);
+		cout << "Game Over!\n";
+		playingGame = false;
+		enterIntoScoreboard(playerScore);
+		char newTxt[256];
+		sprintf(newTxt, "");
+		update_text(score_id, newTxt);
+		update_text(timer_id, newTxt);
+		update_text(cursor_id, newTxt);
+
+		sprintf(newTxt, "1. %i\n2. %i\n3. %i\n", scoreBoard[0], scoreBoard[1], scoreBoard[2]);
+		update_text(scoreboard_id, newTxt);
+		draw_texts();
+		gameEndSeen = true;
+	}
+
+}
+
+void loseCheck() {
+	int i, j;
+	for (i = 0; i < invaderRow; i++) {
+		for (j = 0; j < invaderColumn; j++) {
+			if (invaders[i][j].active && invaders[i][j].yPos < 0) {
+				gameEnd();
+			}
+		}
+	}
+}
+
+void winCheck() {
+	bool win = true;
+	int i, j;
+	for (i = 0; i < invaderRow && win; i++) {
+		for (j = 0; j < invaderColumn && win; j++) {
+			if (invaders[i][j].active) {
+				win = false;
+			}
+		}
+	}
+	if (win) {
+		playerScore *= 1.5;
+		gameEnd();
+	}
+}
+
+void restart() {
+	playerScore = 0;
+	scoreCombo = 1.0;
+	elapsed = 0.0;
+	playingGame = true;
+	initInvaders();
+	mothershipActive = false;
+	char newTxt[256];
+	sprintf(newTxt, "");
+	update_text(scoreboard_id, newTxt);
+	sprintf(newTxt, "| |");
+	update_text(cursor_id, newTxt);
+	invaderSpeed = 0.2;
+	cameraAlign = 0.0;
+	cameraRotate = rotate_x_deg(identity_mat4(), -30);
+	gameEndSeen = false;
+}
+
 #pragma region MESH LOADING
 /*----------------------------------------------------------------------------
-                   MESH LOADING FUNCTION
-  ----------------------------------------------------------------------------*/
+MESH LOADING FUNCTION
+----------------------------------------------------------------------------*/
 
-bool load_mesh (const char* file_name, int count) {
-  const aiScene* scene = aiImportFile (file_name, aiProcess_Triangulate); // TRIANGLES!
-        fprintf (stderr, "ERROR: reading mesh %s\n", file_name);
-  if (!scene) {
-    fprintf (stderr, "ERROR: reading mesh %s\n", file_name);
-    return false;
-  }
-  printf ("  %i animations\n", scene->mNumAnimations);
-  printf ("  %i cameras\n", scene->mNumCameras);
-  printf ("  %i lights\n", scene->mNumLights);
-  printf ("  %i materials\n", scene->mNumMaterials);
-  printf ("  %i meshes\n", scene->mNumMeshes);
-  printf ("  %i textures\n", scene->mNumTextures);
-  g_point_count[count] = 0;
-  for (unsigned int m_i = 0; m_i < scene->mNumMeshes; m_i++) {
-    const aiMesh* mesh = scene->mMeshes[m_i];
-    printf ("    %i vertices in mesh\n", mesh->mNumVertices);
-    g_point_count[count] += mesh->mNumVertices;
-    for (unsigned int v_i = 0; v_i < mesh->mNumVertices; v_i++) {
-      if (mesh->HasPositions ()) {
-        const aiVector3D* vp = &(mesh->mVertices[v_i]);
-        //printf ("      vp %i (%f,%f,%f)\n", v_i, vp->x, vp->y, vp->z);
-        g_vp[count].push_back (vp->x);
-        g_vp[count].push_back (vp->y);
-        g_vp[count].push_back (vp->z);
-      }
-      if (mesh->HasNormals ()) {
-        const aiVector3D* vn = &(mesh->mNormals[v_i]);
-        //printf ("      vn %i (%f,%f,%f)\n", v_i, vn->x, vn->y, vn->z);
-        g_vn[count].push_back (vn->x);
-        g_vn[count].push_back (vn->y);
-        g_vn[count].push_back (vn->z);
-      }
-      if (mesh->HasTextureCoords (0)) {
-        const aiVector3D* vt = &(mesh->mTextureCoords[0][v_i]);
-        printf ("      vt %i (%f,%f)\n", v_i, vt->x, vt->y);
-        g_vt[count].push_back (vt->x);
-        g_vt[count].push_back (vt->y);
-      }
-      if (mesh->HasTangentsAndBitangents ()) {
-        // NB: could store/print tangents here
-      }
-    }
-  }
-  
-  aiReleaseImport (scene);
-  return true;
+bool load_mesh(const char* file_name, int count) {
+	const aiScene* scene = aiImportFile(file_name, aiProcess_Triangulate); // TRIANGLES!
+	fprintf(stderr, "ERROR: reading mesh %s\n", file_name);
+	if (!scene) {
+		fprintf(stderr, "ERROR: reading mesh %s\n", file_name);
+		return false;
+	}
+	printf("  %i animations\n", scene->mNumAnimations);
+	printf("  %i cameras\n", scene->mNumCameras);
+	printf("  %i lights\n", scene->mNumLights);
+	printf("  %i materials\n", scene->mNumMaterials);
+	printf("  %i meshes\n", scene->mNumMeshes);
+	printf("  %i textures\n", scene->mNumTextures);
+	g_point_count[count] = 0;
+	for (unsigned int m_i = 0; m_i < scene->mNumMeshes; m_i++) {
+		const aiMesh* mesh = scene->mMeshes[m_i];
+		printf("    %i vertices in mesh\n", mesh->mNumVertices);
+		g_point_count[count] += mesh->mNumVertices;
+		for (unsigned int v_i = 0; v_i < mesh->mNumVertices; v_i++) {
+			if (mesh->HasPositions()) {
+				const aiVector3D* vp = &(mesh->mVertices[v_i]);
+				//printf ("      vp %i (%f,%f,%f)\n", v_i, vp->x, vp->y, vp->z);
+				g_vp[count].push_back(vp->x);
+				g_vp[count].push_back(vp->y);
+				g_vp[count].push_back(vp->z);
+			}
+			if (mesh->HasNormals()) {
+				const aiVector3D* vn = &(mesh->mNormals[v_i]);
+				//printf ("      vn %i (%f,%f,%f)\n", v_i, vn->x, vn->y, vn->z);
+				g_vn[count].push_back(vn->x);
+				g_vn[count].push_back(vn->y);
+				g_vn[count].push_back(vn->z);
+			}
+			if (mesh->HasTextureCoords(0)) {
+				const aiVector3D* vt = &(mesh->mTextureCoords[0][v_i]);
+				printf("      vt %i (%f,%f)\n", v_i, vt->x, vt->y);
+				g_vt[count].push_back(vt->x);
+				g_vt[count].push_back(vt->y);
+			}
+			if (mesh->HasTangentsAndBitangents()) {
+				// NB: could store/print tangents here
+			}
+		}
+	}
+
+	aiReleaseImport(scene);
+	return true;
 }
 
 #pragma endregion MESH LOADING
@@ -421,95 +474,95 @@ bool load_mesh (const char* file_name, int count) {
 #pragma region SHADER_FUNCTIONS
 
 // Create a NULL-terminated string by reading the provided file
-char* readShaderSource(const char* shaderFile) {   
-    FILE* fp = fopen(shaderFile, "rb"); //!->Why does binary flag "RB" work and not "R"... wierd msvc thing?
+char* readShaderSource(const char* shaderFile) {
+	FILE* fp = fopen(shaderFile, "rb"); //!->Why does binary flag "RB" work and not "R"... wierd msvc thing?
 
-    if ( fp == NULL ) { return NULL; }
+	if (fp == NULL) { return NULL; }
 
-    fseek(fp, 0L, SEEK_END);
-    long size = ftell(fp);
+	fseek(fp, 0L, SEEK_END);
+	long size = ftell(fp);
 
-    fseek(fp, 0L, SEEK_SET);
-    char* buf = new char[size + 1];
-    fread(buf, 1, size, fp);
-    buf[size] = '\0';
+	fseek(fp, 0L, SEEK_SET);
+	char* buf = new char[size + 1];
+	fread(buf, 1, size, fp);
+	buf[size] = '\0';
 
-    fclose(fp);
+	fclose(fp);
 
-    return buf;
+	return buf;
 }
 
 
 static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType)
 {
 	// create a shader object
-    GLuint ShaderObj = glCreateShader(ShaderType);
+	GLuint ShaderObj = glCreateShader(ShaderType);
 
-    if (ShaderObj == 0) {
-        fprintf(stderr, "Error creating shader type %d\n", ShaderType);
-        exit(0);
-    }
-	const char* pShaderSource = readShaderSource( pShaderText);
+	if (ShaderObj == 0) {
+		fprintf(stderr, "Error creating shader type %d\n", ShaderType);
+		exit(0);
+	}
+	const char* pShaderSource = readShaderSource(pShaderText);
 
 	// Bind the source code to the shader, this happens before compilation
 	glShaderSource(ShaderObj, 1, (const GLchar**)&pShaderSource, NULL);
 	// compile the shader and check for errors
-    glCompileShader(ShaderObj);
-    GLint success;
+	glCompileShader(ShaderObj);
+	GLint success;
 	// check for shader related errors using glGetShaderiv
-    glGetShaderiv(ShaderObj, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        GLchar InfoLog[1024];
-        glGetShaderInfoLog(ShaderObj, 1024, NULL, InfoLog);
-        fprintf(stderr, "Error compiling shader type %d: '%s'\n", ShaderType, InfoLog);
+	glGetShaderiv(ShaderObj, GL_COMPILE_STATUS, &success);
+	if (!success) {
+		GLchar InfoLog[1024];
+		glGetShaderInfoLog(ShaderObj, 1024, NULL, InfoLog);
+		fprintf(stderr, "Error compiling shader type %d: '%s'\n", ShaderType, InfoLog);
 		Sleep(10000000);
 		exit(1);
-    }
+	}
 	// Attach the compiled shader object to the program object
-    glAttachShader(ShaderProgram, ShaderObj);
+	glAttachShader(ShaderProgram, ShaderObj);
 }
 
 GLuint CompileShaders()
 {
 	//Start the process of setting up our shaders by creating a program ID
 	//Note: we will link all the shaders together into this ID
-    shaderProgramID = glCreateProgram();
-    if (shaderProgramID == 0) {
-        fprintf(stderr, "Error creating shader program\n");
+	shaderProgramID = glCreateProgram();
+	if (shaderProgramID == 0) {
+		fprintf(stderr, "Error creating shader program\n");
 		Sleep(10000000);
-        exit(1);
-    }
+		exit(1);
+	}
 
 	// Create two shader objects, one for the vertex, and one for the fragment shader
-    AddShader(shaderProgramID, "../Shaders/simpleVertexShader.txt", GL_VERTEX_SHADER);
-    AddShader(shaderProgramID, "../Shaders/fShader.txt", GL_FRAGMENT_SHADER);
+	AddShader(shaderProgramID, "../Shaders/simpleVertexShader.txt", GL_VERTEX_SHADER);
+	AddShader(shaderProgramID, "../Shaders/fShader.txt", GL_FRAGMENT_SHADER);
 
-    GLint Success = 0;
-    GLchar ErrorLog[1024] = { 0 };
+	GLint Success = 0;
+	GLchar ErrorLog[1024] = { 0 };
 	// After compiling all shader objects and attaching them to the program, we can finally link it
-    glLinkProgram(shaderProgramID);
+	glLinkProgram(shaderProgramID);
 	// check for program related errors using glGetProgramiv
-    glGetProgramiv(shaderProgramID, GL_LINK_STATUS, &Success);
+	glGetProgramiv(shaderProgramID, GL_LINK_STATUS, &Success);
 	if (Success == 0) {
 		glGetProgramInfoLog(shaderProgramID, sizeof(ErrorLog), NULL, ErrorLog);
 		fprintf(stderr, "Error linking shader program: '%s'\n", ErrorLog);
 		Sleep(10000000);
-        exit(1);
+		exit(1);
 	}
 
 	// program has been successfully linked but needs to be validated to check whether the program can execute given the current pipeline state
-    glValidateProgram(shaderProgramID);
+	glValidateProgram(shaderProgramID);
 	// check for program related errors using glGetProgramiv
-    glGetProgramiv(shaderProgramID, GL_VALIDATE_STATUS, &Success);
-    if (!Success) {
-        glGetProgramInfoLog(shaderProgramID, sizeof(ErrorLog), NULL, ErrorLog);
-        fprintf(stderr, "Invalid shader program: '%s'\n", ErrorLog);
+	glGetProgramiv(shaderProgramID, GL_VALIDATE_STATUS, &Success);
+	if (!Success) {
+		glGetProgramInfoLog(shaderProgramID, sizeof(ErrorLog), NULL, ErrorLog);
+		fprintf(stderr, "Invalid shader program: '%s'\n", ErrorLog);
 		Sleep(10000000);
-        exit(1);
-    }
+		exit(1);
+	}
 	// Finally, use the linked shader program
 	// Note: this program will stay in effect for all draw calls until you replace it with another or explicitly disable its use
-    glUseProgram(shaderProgramID);
+	glUseProgram(shaderProgramID);
 	return shaderProgramID;
 }
 #pragma endregion SHADER_FUNCTIONS
@@ -518,9 +571,9 @@ GLuint CompileShaders()
 #pragma region VBO_FUNCTIONS
 
 void generateObjectBufferMesh() {
-/*----------------------------------------------------------------------------
-                   LOAD MESH HERE AND COPY INTO BUFFERS
-  ----------------------------------------------------------------------------*/
+	/*----------------------------------------------------------------------------
+	LOAD MESH HERE AND COPY INTO BUFFERS
+	----------------------------------------------------------------------------*/
 
 	//Note: you may get an error "vector subscript out of range" if you are using this code for a mesh that doesnt have positions and normals
 	//Might be an idea to do a check for that before generating and binding the buffer.
@@ -542,9 +595,9 @@ void generateObjectBufferMesh() {
 
 		//	This is for texture coordinates which you don't currently need, so I have commented it out
 		unsigned int vt_vbo = 0;
-		glGenBuffers (1, &vt_vbo);
-		glBindBuffer (GL_ARRAY_BUFFER, vt_vbo);
-		glBufferData (GL_ARRAY_BUFFER, g_point_count[i] * 2 * sizeof (float), &g_vt[i][0], GL_STATIC_DRAW);
+		glGenBuffers(1, &vt_vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vt_vbo);
+		glBufferData(GL_ARRAY_BUFFER, g_point_count[i] * 2 * sizeof(float), &g_vt[i][0], GL_STATIC_DRAW);
 
 		glGenVertexArrays(1, &(vaos[i]));
 		glBindVertexArray(vaos[i]);
@@ -557,42 +610,42 @@ void generateObjectBufferMesh() {
 		glVertexAttribPointer(loc2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
 		//	This is for texture coordinates which you don't currently need, so I have commented it out
-		glEnableVertexAttribArray (loc3);
-		glBindBuffer (GL_ARRAY_BUFFER, vt_vbo);
-		glVertexAttribPointer (loc3, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+		glEnableVertexAttribArray(loc3);
+		glBindBuffer(GL_ARRAY_BUFFER, vt_vbo);
+		glVertexAttribPointer(loc3, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 		printf("g_point: %i , %i \n", i, g_point_count[i]);
 	}
-	
+
 }
 
 
 #pragma endregion VBO_FUNCTIONS
 
 
-void display(){
+void display() {
 	// tell GL to only draw onto a pixel if the shape is closer to the viewer
-	glEnable (GL_DEPTH_TEST); // enable depth-testing
-	glDepthFunc (GL_LESS); // depth-testing interprets a smaller value as "closer"
-	glClearColor (0.5f, 0.5f, 0.5f, 1.0f);
-	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glUseProgram (shaderProgramID);
+	glEnable(GL_DEPTH_TEST); // enable depth-testing
+	glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
+	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glUseProgram(shaderProgramID);
 
 
 	//Declare your uniform variables that will be used in your shader
-	int matrix_location = glGetUniformLocation (shaderProgramID, "model");
-	int view_mat_location = glGetUniformLocation (shaderProgramID, "view");
-	int proj_mat_location = glGetUniformLocation (shaderProgramID, "proj");
-	
+	int matrix_location = glGetUniformLocation(shaderProgramID, "model");
+	int view_mat_location = glGetUniformLocation(shaderProgramID, "view");
+	int proj_mat_location = glGetUniformLocation(shaderProgramID, "proj");
+
 
 	// Root of the Hierarchy
 	mat4 view = cameraRotate * cameraTranslate;
-	mat4 persp_proj = perspective(45.0, (float)width/(float)height, 0.1, 100.0);
-	mat4 model = identity_mat4 ();
+	mat4 persp_proj = perspective(45.0, (float)width / (float)height, 0.1, 100.0);
+	mat4 model = identity_mat4();
 
 	// update uniforms & draw
-	glUniformMatrix4fv (proj_mat_location, 1, GL_FALSE, persp_proj.m);
-	glUniformMatrix4fv (view_mat_location, 1, GL_FALSE, view.m);
-	glUniformMatrix4fv (matrix_location, 1, GL_FALSE, model.m);
+	glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, persp_proj.m);
+	glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, view.m);
+	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model.m);
 
 	// Draw SHIP
 	glEnable(GL_TEXTURE_2D);
@@ -607,10 +660,9 @@ void display(){
 	model = rotate_y_deg(model, cameraAlign);
 	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model.m);
 	glDrawArrays(GL_TRIANGLES, 0, g_point_count[0]);
-	
+
 	// Draw INVADERS
 	glBindTexture(GL_TEXTURE_2D, textures_buffer[1]);
-	if (playingGame) invadersMove();
 	glBindVertexArray(vaos[1]);
 	int i, j;
 	for (i = 0; i < invaderRow; i++) {
@@ -632,16 +684,16 @@ void display(){
 	glBindTexture(GL_TEXTURE_2D, textures_buffer[2]);
 	glBindVertexArray(vaos[2]);
 	model = translate(identity_mat4(), vec3(0.0, -0.5, 0.0));
+	model = rotate_y_deg(model, arenaRotation);
 	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model.m);
 	glDrawArrays(GL_TRIANGLES, 0, g_point_count[2]);
 
 	// Draw BULLETS
 	glBindTexture(GL_TEXTURE_2D, textures_buffer[3]);
 	glBindVertexArray(vaos[3]);
-	
+
 	for (i = 0; i < maxNumberOfBullets && ammo[i].active; i++) {
 		ammo[i] = bulletLogic(ammo[i]);
-		//cout << "Bullet x: " << ammo[i].xPos << "\n";
 		mat4 bModel = ammo[i].bModel;
 		bModel = scale(bModel, vec3(0.2, 0.2, 0.2));
 		bModel = translate(bModel, vec3(0.0, 2.0 + (ammo[i].yPos), -5.0));
@@ -652,7 +704,6 @@ void display(){
 
 	// Draw MOTHERSHIP
 	glBindTexture(GL_TEXTURE_2D, textures_buffer[4]);
-	if (playingGame) spawnMothership();
 	glBindVertexArray(vaos[4]);
 	if (mothershipActive) {
 		mthModel = scale(identity_mat4(), vec3(0.1, 0.1, 0.1));
@@ -660,17 +711,10 @@ void display(){
 		mthModel = translate(mthModel, vec3(0.0, mothershipY, -5.0));
 		mthModel = rotate_y_deg(mthModel, mothershipX);
 
-		if (playingGame) mothershipX -= mothershipSpeed;
-		if (mothershipX < 10) {
-			mothershipActive = false;
-		}
-
-
 		glUniformMatrix4fv(matrix_location, 1, GL_FALSE, mthModel.m);
 		glDrawArrays(GL_TRIANGLES, 0, g_point_count[4]);
 
-		if (playingGame) miniRotation += 0.5;
-
+		// Draw hierarchical model of mini invaders on mothership
 		glBindVertexArray(vaos[1]);
 		mat4 miniModel1 = identity_mat4();
 		miniModel1 = scale(miniModel1, vec3(0.2, 0.2, 0.2));
@@ -699,7 +743,7 @@ void display(){
 		glUniformMatrix4fv(matrix_location, 1, GL_FALSE, miniModel3.m);
 		glDrawArrays(GL_TRIANGLES, 0, g_point_count[1]);
 	}
-	
+
 	// Draw TEXT
 	char newTxt[256];
 	sprintf(newTxt, "Score: %d (x%.2f)\n", playerScore, scoreCombo);
@@ -711,19 +755,11 @@ void display(){
 
 	draw_texts();
 
-	if ((playertime - elapsed) <= 0) {
-		elapsed = playertime;
-		gameLose();
-	}
-
-	// Draw SKYBOX
-
-
-    glutSwapBuffers();
+	glutSwapBuffers();
 }
 
 
-void updateScene() {	
+void updateScene() {
 
 	// Placeholder code, if you want to work with framerate
 	// Wait until at least 16ms passed since start of last frame (Effectively caps framerate at ~60fps)
@@ -732,10 +768,30 @@ void updateScene() {
 	float  delta = (curr_time - last_time) * 0.001f;
 	if (delta > 0.03f)
 		delta = 0.03f;
-	last_time = curr_time;
 
-	// rotate the model slowly around the y axis
-	rotate_y+=0.2f;
+	if (playingGame) {
+		// Make various models move
+		invadersMove();
+		miniRotation += 0.5;
+		arenaRotation -= 0.01;
+
+		// Call Mothership Logic
+		spawnMothership();
+		if (mothershipActive) {
+			mothershipX -= mothershipSpeed;
+			if (mothershipX < 10) {
+				mothershipActive = false;
+			}
+		}
+	}
+
+	last_time = curr_time;
+	loseCheck();
+	winCheck();
+	if ((playertime - elapsed) <= 0) {
+		elapsed = playertime;
+		gameEnd();
+	}
 	// Draw the next frame
 	glutPostRedisplay();
 }
@@ -748,13 +804,13 @@ void init()
 	GLuint shaderProgramID = CompileShaders();
 	// load mesh into a vertex buffer array
 	generateObjectBufferMesh();
-	
-	
+
+
 }
 
 // Placeholder code for the keypress
 void keypress(unsigned char key, int x, int y) {
-	if(key=='d' && playingGame){
+	if (key == 'd' && playingGame) {
 		cameraRotate = rotate_x_deg(cameraRotate, 30);
 		cameraRotate = rotate_y_deg(cameraRotate, 1.0);
 		cameraRotate = rotate_x_deg(cameraRotate, -30);
@@ -773,87 +829,41 @@ void keypress(unsigned char key, int x, int y) {
 		}
 	}
 	else if (key == 'w' && playingGame) {
-		cout << "FIRE at: ";
 		fireBullet();
 	}
 	else if (key == 'r') {
 		cout << "RESTART";
-		playerScore = 0;
-		scoreCombo = 1.0;
-		elapsed = 0.0;
-		playingGame = true;
-		initInvaders();
-		mothershipActive = false;
-		char newTxt[256];
-		sprintf(newTxt, "");
-		update_text(scoreboard_id, newTxt);
-		sprintf(newTxt, "| |");
-		update_text(cursor_id, newTxt);
-		gameLoseSeen = false;
+		restart();
 		Sleep(1000);
 	}
 }
 
-void mouseMove(int x, int y) {
-	/*
-	if (x < prevMouseX) {
-		cameraRotate = rotate_y_deg(cameraRotate, 1.0);
-		prevMouseX = x;
-	}
-	else if (x > prevMouseX) {
-		cameraRotate = rotate_y_deg(cameraRotate, -1.0);
-		prevMouseX = x;
-	}
-
-	if (y < prevMouseY) {
-		cameraRotate = rotate_x_deg(cameraRotate, -1.0);
-		prevMouseY = y;
-	}
-	else if (y > prevMouseY) {
-		cameraRotate = rotate_x_deg(cameraRotate, 1.0);
-		prevMouseY = y;
-	}
-	*/
-}
-
-int main(int argc, char** argv){
+int main(int argc, char** argv) {
 	srand(time(NULL));
 
 	// Set up the window
 	glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB);
-    glutInitWindowSize(width, height);
-    glutCreateWindow("Hello Triangle");
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+	glutInitWindowSize(width, height);
+	glutCreateWindow("Hello Triangle");
 
 	// Tell glut where the display function is
 	glutDisplayFunc(display);
 	glutIdleFunc(updateScene);
 	glutKeyboardFunc(keypress);
-	glutPassiveMotionFunc(mouseMove);
 
 	// A call to glewInit() must be done after glut is initialized!
-    GLenum res = glewInit();
+	GLenum res = glewInit();
 	// Check for any errors
-    if (res != GLEW_OK) {
-      fprintf(stderr, "Error: '%s'\n", glewGetErrorString(res));
-      return 1;
-    }
+	if (res != GLEW_OK) {
+		fprintf(stderr, "Error: '%s'\n", glewGetErrorString(res));
+		return 1;
+	}
 	// Set up your objects and shaders
 	init();
 	loadFont();
 	loadTextures();
 	// Begin infinite event loop
 	glutMainLoop();
-    return 0;
+	return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
